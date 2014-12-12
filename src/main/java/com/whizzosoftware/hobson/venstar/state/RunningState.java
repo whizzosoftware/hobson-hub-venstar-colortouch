@@ -7,6 +7,11 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar.state;
 
+import com.whizzosoftware.hobson.venstar.api.dto.InfoRequest;
+import com.whizzosoftware.hobson.venstar.api.dto.InfoResponse;
+import com.whizzosoftware.hobson.venstar.api.dto.RootRequest;
+import com.whizzosoftware.hobson.venstar.api.dto.RootResponse;
+
 /**
  * Represents the "normal" running state of the plugin.
  *
@@ -20,11 +25,20 @@ public class RunningState implements State {
 
     @Override
     public void onThermostatFound(StateContext context) {
-        context.setState(new DiscoveryState(context.getChannelFactory()));
+        context.setState(new DiscoveryState());
     }
 
     @Override
     public void onSetDeviceVariable(StateContext context, String deviceId, String name, Object value) {
         context.doSetDeviceVariable(deviceId, name, value);
+    }
+
+    @Override
+    public void onRootResponse(StateContext context, RootRequest request, RootResponse response, Throwable error) {
+
+    }
+
+    @Override
+    public void onInfoResponse(StateContext context, InfoRequest request, InfoResponse response, Throwable error) {
     }
 }

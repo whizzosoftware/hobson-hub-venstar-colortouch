@@ -7,10 +7,13 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar.api.dto;
 
-import org.apache.commons.httpclient.NameValuePair;
+import com.whizzosoftware.hobson.api.plugin.http.URLEncoderUtil;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Encapsulates the data needed to make control requests to a thermostat.
@@ -18,13 +21,19 @@ import java.util.List;
  * @author Dan Noguerol
  */
 public class ControlRequest {
+    private URI baseURI;
+    private URI uri;
+    private String deviceId;
     private Integer mode;
     private Integer fan;
     private Double heatTemp;
     private Double coolTemp;
     private Integer pin;
 
-    public ControlRequest(ThermostatMode mode, FanMode fan, Double heatTemp, Double coolTemp, Integer pin) {
+    public ControlRequest(URI baseURI, String deviceId, ThermostatMode mode, FanMode fan, Double heatTemp, Double coolTemp, Integer pin) throws URISyntaxException {
+        this.baseURI = baseURI;
+        this.uri = new URI(baseURI.getScheme(), baseURI.getHost(), "/control", null);
+        this.deviceId = deviceId;
         if (mode != null) {
             this.mode = mode.ordinal();
         }
@@ -36,23 +45,73 @@ public class ControlRequest {
         this.pin = pin;
     }
 
-    public NameValuePair[] getRequestBody() {
-        List<NameValuePair> pairs = new ArrayList<NameValuePair>();
+    public URI getBaseURI() {
+        return baseURI;
+    }
+
+    public URI getURI() {
+        return uri;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public Integer getMode() {
+        return mode;
+    }
+
+    public Integer getFanMode() {
+        return fan;
+    }
+
+    public Double getHeatTemp() {
+        return heatTemp;
+    }
+
+    public Double getCoolTemp() {
+        return coolTemp;
+    }
+
+    public Integer getPin() {
+        return pin;
+    }
+
+    public void updateIfNull(ThermostatMode mode, FanMode fan, Double heatTemp, Double coolTemp, Integer pin) {
+        if (this.mode == null && mode != null) {
+            this.mode = mode.ordinal();
+        }
+        if (this.fan == null && fan != null) {
+            this.fan = fan.ordinal();
+        }
+        if (this.heatTemp == null) {
+            this.heatTemp = heatTemp;
+        }
+        if (this.coolTemp == null) {
+            this.coolTemp = coolTemp;
+        }
+        if (this.pin == null) {
+            this.pin = pin;
+        }
+    }
+
+    public String getRequestBody() throws UnsupportedEncodingException {
+        Map<String,String> pairs = new HashMap<>();
         if (mode != null) {
-            pairs.add(new NameValuePair("mode", mode.toString()));
+            pairs.put("mode", mode.toString());
         }
         if (fan != null) {
-            pairs.add(new NameValuePair("fan", fan.toString()));
+            pairs.put("fan", fan.toString());
         }
         if (heatTemp != null) {
-            pairs.add(new NameValuePair("heattemp", heatTemp.toString()));
+            pairs.put("heattemp", heatTemp.toString());
         }
         if (coolTemp != null) {
-            pairs.add(new NameValuePair("cooltemp", coolTemp.toString()));
+            pairs.put("cooltemp", coolTemp.toString());
         }
         if (pin != null) {
-            pairs.add(new NameValuePair("pin", pin.toString()));
+            pairs.put("pin", pin.toString());
         }
-        return pairs.toArray(new NameValuePair[pairs.size()]);
+        return URLEncoderUtil.format(pairs, null);
     }
 }

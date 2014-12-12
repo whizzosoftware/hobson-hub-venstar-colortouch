@@ -1,36 +1,36 @@
 package com.whizzosoftware.hobson.venstar.state;
 
-import com.whizzosoftware.hobson.venstar.api.ColorTouchChannel;
-import com.whizzosoftware.hobson.venstar.api.ColorTouchChannelFactory;
+import com.whizzosoftware.hobson.venstar.api.dto.ControlRequest;
+import com.whizzosoftware.hobson.venstar.api.dto.InfoRequest;
 import com.whizzosoftware.hobson.venstar.api.dto.InfoResponse;
+import com.whizzosoftware.hobson.venstar.api.dto.RootRequest;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class MockStateContext implements StateContext {
     private State state;
-    private List<String> foundHosts = new ArrayList<String>();
-    private List<String> createdHosts = new ArrayList<String>();
+    private List<URI> foundURIs = new ArrayList<>();
+    private List<String> createdThermostats = new ArrayList<>();
     private boolean refreshFlag;
-    private List<VariableUpdateRequest> updateRequests = new ArrayList<VariableUpdateRequest>();
+    private List<VariableUpdateRequest> updateRequests = new ArrayList<>();
+    private List<RootRequest> rootRequests = new ArrayList<>();
+    private List<InfoRequest> infoRequests = new ArrayList<>();
+    private List<ControlRequest> controlRequests = new ArrayList<>();
 
     @Override
-    public ColorTouchChannelFactory getChannelFactory() {
-        return null;
+    public Collection<URI> getDiscoveredURIs() {
+        return foundURIs;
     }
 
-    @Override
-    public Collection<String> getDiscoveredHosts() {
-        return foundHosts;
-    }
-
-    public void addDiscoveredHost(String host) {
-        foundHosts.add(host);
+    public void addDiscoveredHost(URI uri) {
+        foundURIs.add(uri);
     }
 
     public int getDiscoveredHostCount() {
-        return foundHosts.size();
+        return foundURIs.size();
     }
 
     @Override
@@ -44,21 +44,21 @@ public class MockStateContext implements StateContext {
 
     @Override
     public boolean hasThermostats() {
-        return createdHosts.size() > 0;
+        return createdThermostats.size() > 0;
     }
 
     @Override
     public boolean hasThermostatWithHost(String host) {
-        return createdHosts.contains(host);
+        return createdThermostats.contains(host);
     }
 
-    public int getCreatedHostCount() {
-        return createdHosts.size();
+    public int getCreatedThermostatCount() {
+        return createdThermostats.size();
     }
 
     @Override
-    public void addThermostat(ColorTouchChannel channel, InfoResponse info) {
-        createdHosts.add(channel.getHost());
+    public void addThermostat(URI uri, InfoResponse info) {
+        createdThermostats.add(uri.getHost());
     }
 
     @Override
@@ -69,6 +69,33 @@ public class MockStateContext implements StateContext {
     @Override
     public void doSetDeviceVariable(String deviceId, String name, Object value) {
         updateRequests.add(new VariableUpdateRequest(deviceId, name, value));
+    }
+
+    @Override
+    public void sendRootRequest(RootRequest request) {
+        rootRequests.add(request);
+    }
+
+    public Collection<RootRequest> getRootRequests() {
+        return rootRequests;
+    }
+
+    @Override
+    public void sendInfoRequest(InfoRequest request) {
+        infoRequests.add(request);
+    }
+
+    public Collection<InfoRequest> getInfoRequests() {
+        return infoRequests;
+    }
+
+    @Override
+    public void sendControlRequest(ControlRequest request) {
+        controlRequests.add(request);
+    }
+
+    public Collection<ControlRequest> getControlRequests() {
+        return controlRequests;
     }
 
     public Collection<VariableUpdateRequest> getUpdateRequests() {

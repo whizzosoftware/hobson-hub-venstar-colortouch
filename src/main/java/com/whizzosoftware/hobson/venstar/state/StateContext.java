@@ -8,9 +8,9 @@
 package com.whizzosoftware.hobson.venstar.state;
 
 import com.whizzosoftware.hobson.venstar.api.ColorTouchChannel;
-import com.whizzosoftware.hobson.venstar.api.ColorTouchChannelFactory;
 import com.whizzosoftware.hobson.venstar.api.dto.InfoResponse;
 
+import java.net.URI;
 import java.util.Collection;
 
 /**
@@ -18,13 +18,12 @@ import java.util.Collection;
  *
  * @author Dan Noguerol
  */
-public interface StateContext {
-    public ColorTouchChannelFactory getChannelFactory();
-    public Collection<String> getDiscoveredHosts();
+public interface StateContext extends ColorTouchChannel {
+    public Collection<URI> getDiscoveredURIs();
     public void setState(State state);
     public boolean hasThermostats();
     public boolean hasThermostatWithHost(String host);
-    public void addThermostat(ColorTouchChannel channel, InfoResponse info);
+    public void addThermostat(URI baseURI, InfoResponse info);
     public void refreshAllThermostats();
     public void doSetDeviceVariable(String deviceId, String name, Object value);
 }

@@ -1,55 +1,43 @@
 package com.whizzosoftware.hobson.venstar.api;
 
 import com.whizzosoftware.hobson.venstar.api.dto.ControlRequest;
-import com.whizzosoftware.hobson.venstar.api.dto.ControlResponse;
-import com.whizzosoftware.hobson.venstar.api.dto.InfoResponse;
-import com.whizzosoftware.hobson.venstar.api.dto.RootResponse;
+import com.whizzosoftware.hobson.venstar.api.dto.InfoRequest;
+import com.whizzosoftware.hobson.venstar.api.dto.RootRequest;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class MockColorTouchChannel implements ColorTouchChannel {
-    private String host;
-    private Integer apiVersion;
-    private final List<ControlRequest> controlRequests = new ArrayList<ControlRequest>();
+    private final List<InfoRequest> infoRequests = new ArrayList<>();
+    private final List<ControlRequest> controlRequests = new ArrayList<>();
 
-    public MockColorTouchChannel(String host, Integer apiVersion) {
-        this.host = host;
-        this.apiVersion = apiVersion;
+    @Override
+    public void sendRootRequest(RootRequest request) {
     }
 
     @Override
-    public String getId() {
-        return host;
+    public void sendInfoRequest(InfoRequest request) {
+        infoRequests.add(request);
     }
 
     @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public RootResponse sendRootRequest() throws ColorTouchChannelException {
-        return new RootResponse(apiVersion, "residential");
-    }
-
-    @Override
-    public InfoResponse sendInfoRequest() throws ColorTouchChannelException {
-        return new InfoResponse();
-    }
-
-    @Override
-    public ControlResponse sendControlRequest(ControlRequest request) throws ColorTouchChannelException {
+    public void sendControlRequest(ControlRequest request) {
         controlRequests.add(request);
-        return new ControlResponse();
     }
 
-    public Collection<ControlRequest> getControlRequests() {
+    public List<InfoRequest> getInfoRequests() {
+        return infoRequests;
+    }
+
+    public void clearInfoRequests() {
+        infoRequests.clear();
+    }
+
+    public List<ControlRequest> getControlRequests() {
         return controlRequests;
     }
 
-    @Override
-    public void close() {
+    public void clearControlRequests() {
+        controlRequests.clear();
     }
 }

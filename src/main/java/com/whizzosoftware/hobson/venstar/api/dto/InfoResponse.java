@@ -17,13 +17,22 @@ import org.json.JSONObject;
 public class InfoResponse {
     private String name;
     private ThermostatMode mode;
-    private FanMode fan;
+    private FanMode fanMode;
     private Integer tempUnits;
     private Double spaceTemp;
     private Double coolTemp;
     private Double heatTemp;
 
-    public InfoResponse() {}
+    public InfoResponse(String name, ThermostatMode mode, FanMode fanMode, Integer tempUnits, Double spaceTemp, Double coolTemp, Double heatTemp) {
+        this.name = name;
+        this.mode = mode;
+        this.fanMode = fanMode;
+        this.tempUnits = tempUnits;
+        this.spaceTemp = spaceTemp;
+        this.coolTemp = coolTemp;
+        this.heatTemp = heatTemp;
+
+    }
 
     public InfoResponse(JSONObject json) {
         if (json.has("name")) {
@@ -33,7 +42,7 @@ public class InfoResponse {
             mode = ThermostatMode.values()[json.getInt("mode")];
         }
         if (json.has("fan")) {
-            fan = FanMode.values()[json.getInt("fan")];
+            fanMode = FanMode.values()[json.getInt("fan")];
         }
         if (json.has("tempunits")) {
             tempUnits = json.getInt("tempunits");
@@ -57,8 +66,8 @@ public class InfoResponse {
         return mode;
     }
 
-    public FanMode getFan() {
-        return fan;
+    public FanMode getFanMode() {
+        return fanMode;
     }
 
     public Integer getTempUnits() {
