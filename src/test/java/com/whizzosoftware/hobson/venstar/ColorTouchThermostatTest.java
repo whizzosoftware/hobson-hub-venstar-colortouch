@@ -1,6 +1,7 @@
 package com.whizzosoftware.hobson.venstar;
 
 import com.whizzosoftware.hobson.api.disco.MockDiscoManager;
+import com.whizzosoftware.hobson.api.util.UserUtil;
 import com.whizzosoftware.hobson.api.variable.HobsonVariable;
 import com.whizzosoftware.hobson.api.variable.MockVariableManager;
 import com.whizzosoftware.hobson.api.variable.VariableConstants;
@@ -42,8 +43,8 @@ public class ColorTouchThermostatTest {
         tstat.onStartup();
 
         // verify that the appropriate variables were published
-        assertEquals(5, vm.getPublishedDeviceVariables().size());
-        for (HobsonVariable v : vm.getPublishedDeviceVariables()) {
+        assertEquals(5, vm.getDeviceVariables(UserUtil.DEFAULT_USER, UserUtil.DEFAULT_HUB, "foo", "localhost").size());
+        for (HobsonVariable v : vm.getDeviceVariables(UserUtil.DEFAULT_USER, UserUtil.DEFAULT_HUB, "foo", "localhost")) {
             assertTrue(
                 (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(1.0)) ||
                 (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(2.0)) ||

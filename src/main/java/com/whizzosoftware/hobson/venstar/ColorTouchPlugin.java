@@ -220,7 +220,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     // ***
 
     @Override
-    protected void onHttpResponse(int statusCode, List<Map.Entry<String, String>> headers, InputStream response, Object context) {
+    protected void onHttpResponse(int statusCode, List<Map.Entry<String, String>> headers, String response, Object context) {
         logger.trace("Got HTTP response {} with context: {}", statusCode, context.getClass().getSimpleName());
 
         if (context instanceof RootRequest) {
