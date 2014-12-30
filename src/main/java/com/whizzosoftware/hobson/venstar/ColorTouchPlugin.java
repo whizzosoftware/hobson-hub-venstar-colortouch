@@ -27,7 +27,6 @@ import org.json.JSONTokener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -41,7 +40,7 @@ import java.util.*;
 public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateContext, ColorTouchChannel {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private static final long DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 30;
+    private static final long DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 10;
 
     private long refreshIntervalInSeconds;
     private State state;

@@ -22,8 +22,9 @@ public class InfoResponse {
     private Double spaceTemp;
     private Double coolTemp;
     private Double heatTemp;
+    private Double setPointDelta;
 
-    public InfoResponse(String name, ThermostatMode mode, FanMode fanMode, Integer tempUnits, Double spaceTemp, Double coolTemp, Double heatTemp) {
+    public InfoResponse(String name, ThermostatMode mode, FanMode fanMode, Integer tempUnits, Double spaceTemp, Double coolTemp, Double heatTemp, Double setPointDelta) {
         this.name = name;
         this.mode = mode;
         this.fanMode = fanMode;
@@ -31,7 +32,7 @@ public class InfoResponse {
         this.spaceTemp = spaceTemp;
         this.coolTemp = coolTemp;
         this.heatTemp = heatTemp;
-
+        this.setPointDelta = setPointDelta;
     }
 
     public InfoResponse(JSONObject json) {
@@ -55,6 +56,9 @@ public class InfoResponse {
         }
         if (json.has("heattemp")) {
             heatTemp = json.getDouble("heattemp");
+        }
+        if (json.has("setpointdelta")) {
+            setPointDelta = json.getDouble("setpointdelta");
         }
     }
 
@@ -84,5 +88,9 @@ public class InfoResponse {
 
     public Double getHeatTemp() {
         return heatTemp;
+    }
+
+    public Double getSetPointDelta() {
+        return setPointDelta;
     }
 }

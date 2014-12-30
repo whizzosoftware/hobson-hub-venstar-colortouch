@@ -72,7 +72,7 @@ public class DiscoveryStateTest {
         assertNull(context.getState());
 
         // send back an async response
-        InfoResponse irr = new InfoResponse("foo", ThermostatMode.AUTO, FanMode.AUTO, 1, 1.0, 2.0, 3.0);
+        InfoResponse irr = new InfoResponse("foo", ThermostatMode.AUTO, FanMode.AUTO, 1, 1.0, 2.0, 3.0, 2.0);
         state.onInfoResponse(context, ir, irr, null);
 
         // validate plugin is now in running state with one created thermostat
@@ -116,7 +116,7 @@ public class DiscoveryStateTest {
     @Test
     public void testOneFoundAddressWithRootRequestFailureAndOneFoundThermostat() throws Exception {
         MockStateContext context = new MockStateContext();
-        context.addThermostat(new URI("http://host1"), new InfoResponse("foo", ThermostatMode.AUTO, FanMode.AUTO, 1, 1.0, 2.0, 3.0));
+        context.addThermostat(new URI("http://host1"), new InfoResponse("foo", ThermostatMode.AUTO, FanMode.AUTO, 1, 1.0, 2.0, 3.0, 2.0));
 
         DiscoveryState state = new DiscoveryState();
         assertNull(context.getState());
@@ -227,7 +227,7 @@ public class DiscoveryStateTest {
     @Test
     public void testOneFoundAddressWithUnsupportedApiVersionAndOneFoundThermostat() throws Exception {
         MockStateContext context = new MockStateContext();
-        context.addThermostat(new URI("http://host1"), new InfoResponse("foo", ThermostatMode.AUTO, FanMode.AUTO, 1, 1.0, 2.0, 3.0));
+        context.addThermostat(new URI("http://host1"), new InfoResponse("foo", ThermostatMode.AUTO, FanMode.AUTO, 1, 1.0, 2.0, 3.0, 2.0));
         assertEquals(1, context.getCreatedThermostatCount());
 
         DiscoveryState state = new DiscoveryState();
@@ -262,7 +262,7 @@ public class DiscoveryStateTest {
     public void testDuplicateFoundAddress() throws Exception {
         // start with one thermostat already discovered
         MockStateContext context = new MockStateContext();
-        context.addThermostat(new URI("http://localhost"), new InfoResponse("foo", ThermostatMode.AUTO, FanMode.AUTO, 1, 1.0, 2.0, 3.0));
+        context.addThermostat(new URI("http://localhost"), new InfoResponse("foo", ThermostatMode.AUTO, FanMode.AUTO, 1, 1.0, 2.0, 3.0, 2.0));
 
         // add a new discovered host with the same address
         DiscoveryState state = new DiscoveryState();
@@ -309,7 +309,7 @@ public class DiscoveryStateTest {
         // send back two info responses
         int i=0;
         for (InfoRequest ir : context.getInfoRequests()) {
-            state.onInfoResponse(context, ir, new InfoResponse("thermo", ThermostatMode.AUTO, FanMode.AUTO, 1, 1.0, 2.0, 3.0), null);
+            state.onInfoResponse(context, ir, new InfoResponse("thermo", ThermostatMode.AUTO, FanMode.AUTO, 1, 1.0, 2.0, 3.0, 2.0), null);
             // make sure we didn't jump states prematurely
             if (i == 0) {
                 assertNull(context.getState());

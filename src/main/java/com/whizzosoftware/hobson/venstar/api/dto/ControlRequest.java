@@ -7,6 +7,7 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar.api.dto;
 
+import com.whizzosoftware.hobson.api.HobsonRuntimeException;
 import com.whizzosoftware.hobson.api.plugin.http.URLEncoderUtil;
 
 import java.io.UnsupportedEncodingException;
@@ -30,19 +31,66 @@ public class ControlRequest {
     private Double coolTemp;
     private Integer pin;
 
-    public ControlRequest(URI baseURI, String deviceId, ThermostatMode mode, FanMode fan, Double heatTemp, Double coolTemp, Integer pin) throws URISyntaxException {
-        this.baseURI = baseURI;
-        this.uri = new URI(baseURI.getScheme(), baseURI.getHost(), "/control", null);
-        this.deviceId = deviceId;
-        if (mode != null) {
-            this.mode = mode.ordinal();
+    static public ControlRequest create(URI baseURI, String deviceId, String mode, String fan, Double heatTemp, Double coolTemp, Double setPointDelta, Double currentTemp, Double targetTemp, Integer pin) {
+        ThermostatMode tmode = (mode != null) ? ThermostatMode.valueOf(mode) : null;
+        Double heat = heatTemp;
+        Double cool = coolTemp;
+
+        if (tmode != null) {
+            switch (tmode) {
+                case COOL:
+                    cool = targetTemp;
+                    break;
+
+                case HEAT:
+                    heat = targetTemp;
+                    break;
+
+                case AUTO:
+                    // according to the documentation, when the thermostat mode is "AUTO", cooltemp has to be higher than
+                    // heattemp and they have to be setpointdelta units apart.
+                    if (targetTemp < currentTemp) {
+                        cool = targetTemp;
+                        heat = Math.min(heatTemp, targetTemp - setPointDelta);
+                    } else {
+                        heat = targetTemp;
+                        cool = Math.max(coolTemp, targetTemp + setPointDelta);
+                    }
+            }
         }
-        if (fan != null) {
-            this.fan = fan.ordinal();
+
+        return new ControlRequest(baseURI, deviceId, mode, fan, heat, cool, setPointDelta, pin);
+    }
+
+    public ControlRequest(URI baseURI, String deviceId, String mode, String fan, Double heatTemp, Double coolTemp, Double setPointDelta, Integer pin) {
+        this(baseURI, deviceId, (mode != null) ? ThermostatMode.valueOf(mode) : null, (fan != null) ? FanMode.valueOf(fan) : null, heatTemp, coolTemp, setPointDelta, pin);
+    }
+
+    public ControlRequest(URI baseURI, String deviceId, ThermostatMode mode, FanMode fan, Double heatTemp, Double coolTemp, Double setPointDelta, Integer pin) {
+        try {
+            // according to the documentation, when the thermostat mode is "AUTO", cooltemp has to be higher than
+            // heattemp and they have to be setpointdelta units apart.
+            if (mode == ThermostatMode.AUTO) {
+                if (coolTemp - heatTemp < setPointDelta) {
+                    throw new HobsonRuntimeException("cooltemp must be " + setPointDelta + " units higher than heattemp when thermostat mode is AUTO");
+                }
+            }
+
+            this.baseURI = baseURI;
+            this.uri = new URI(baseURI.getScheme(), baseURI.getHost(), "/control", null);
+            this.deviceId = deviceId;
+            if (mode != null) {
+                this.mode = mode.ordinal();
+            }
+            if (fan != null) {
+                this.fan = fan.ordinal();
+            }
+            this.heatTemp = heatTemp;
+            this.coolTemp = coolTemp;
+            this.pin = pin;
+        } catch (URISyntaxException e) {
+            throw new HobsonRuntimeException("Invalid base request URI: " + baseURI.toString(), e);
         }
-        this.heatTemp = heatTemp;
-        this.coolTemp = coolTemp;
-        this.pin = pin;
     }
 
     public URI getBaseURI() {
@@ -95,7 +143,7 @@ public class ControlRequest {
         }
     }
 
-    public String getRequestBody() throws UnsupportedEncodingException {
+    public Map<String,String> getRequestBodyMap() {
         Map<String,String> pairs = new HashMap<>();
         if (mode != null) {
             pairs.put("mode", mode.toString());
@@ -112,6 +160,10 @@ public class ControlRequest {
         if (pin != null) {
             pairs.put("pin", pin.toString());
         }
-        return URLEncoderUtil.format(pairs, null);
+        return pairs;
+    }
+
+    public String getRequestBody() throws UnsupportedEncodingException {
+        return URLEncoderUtil.format(getRequestBodyMap(), null);
     }
 }

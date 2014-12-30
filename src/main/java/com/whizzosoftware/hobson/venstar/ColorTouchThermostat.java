@@ -7,7 +7,6 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar;
 
-import com.sun.org.apache.xpath.internal.operations.Variable;
 import com.whizzosoftware.hobson.api.device.AbstractHobsonDevice;
 import com.whizzosoftware.hobson.api.device.DeviceType;
 import com.whizzosoftware.hobson.api.plugin.HobsonPlugin;
@@ -40,7 +39,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
     private Double lastHeatTempF;
     private String lastMode;
     private String lastFanMode;
-    private ControlRequest pendingControlRequest;
+    private PendingSetVariableRequest pendingSetVariableRequest;
 
     public ColorTouchThermostat(HobsonPlugin plugin, ColorTouchChannel channel, URI uri, InfoResponse info) {
         super(plugin, uri.getHost().replace('.', '-'));
@@ -60,9 +59,24 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
     @Override
     public void onStartup() {
         publishVariable(VariableConstants.TEMP_F, lastTempF, HobsonVariable.Mask.READ_ONLY);
-        publishVariable(VariableConstants.TARGET_COOL_TEMP_F, lastCoolTempF, HobsonVariable.Mask.READ_WRITE);
-        publishVariable(VariableConstants.TARGET_HEAT_TEMP_F, lastHeatTempF, HobsonVariable.Mask.READ_WRITE);
         publishVariable(VariableConstants.TSTAT_MODE, lastMode, HobsonVariable.Mask.READ_WRITE);
+
+        Double temp = null;
+        if (lastMode != null) {
+            if (lastMode.equals(ThermostatMode.COOL.toString())) {
+                temp = lastCoolTempF;
+            } else if (lastMode.equals(ThermostatMode.HEAT.toString())) {
+                temp = lastHeatTempF;
+            } else if (lastMode.equals(ThermostatMode.AUTO.toString())) {
+                if (lastTempF < lastCoolTempF || lastTempF.equals(lastHeatTempF)) {
+                    temp = lastHeatTempF;
+                } else if (lastTempF > lastCoolTempF || lastTempF.equals(lastCoolTempF)) {
+                    temp = lastCoolTempF;
+                }
+            }
+        }
+
+        publishVariable(VariableConstants.TARGET_TEMP_F, temp, HobsonVariable.Mask.READ_WRITE);
         publishVariable(VariableConstants.TSTAT_FAN_MODE, lastFanMode, HobsonVariable.Mask.READ_WRITE);
     }
 
@@ -82,7 +96,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
 
     @Override
     public String[] getTelemetryVariableNames() {
-        return new String[] {VariableConstants.TEMP_F, VariableConstants.TARGET_HEAT_TEMP_F, VariableConstants.TARGET_COOL_TEMP_F};
+        return new String[] {VariableConstants.TEMP_F, VariableConstants.TARGET_TEMP_F};
     }
 
     @Override
@@ -92,26 +106,11 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
 
     @Override
     public void onSetVariable(String name, Object value) {
-        ThermostatMode mode = null;
-        FanMode fanMode = null;
-        Double heatTemp = null;
-        Double coolTemp = null;
-
-        if (name.equals(VariableConstants.TARGET_COOL_TEMP_F)) {
-            coolTemp = getDouble(value);
-        } else if (name.equals(VariableConstants.TARGET_HEAT_TEMP_F)) {
-            heatTemp = getDouble(value);
-        } else if (name.equals(VariableConstants.TSTAT_MODE)) {
-            mode = ThermostatMode.valueOf(value.toString());
-        } else if (name.equals(VariableConstants.TSTAT_FAN_MODE)) {
-            fanMode = FanMode.valueOf(value.toString());
-        }
-
         // the ColorTouch thermostat doesn't have a way to just update a single property. We therefore query the
         // thermostat for its latest values (in case the thermostat was changed through other means in between refresh
         // intervals) and will send a full control request when a response is received
         try {
-            pendingControlRequest = new ControlRequest(uri, getId(), mode, fanMode, heatTemp, coolTemp, null);
+            pendingSetVariableRequest = new PendingSetVariableRequest(name, value);
             channel.sendInfoRequest(new InfoRequest(getBaseURI(), getId()));
         } catch (URISyntaxException e) {
             logger.error("Error refreshing thermostat: " + getId(), e);
@@ -140,8 +139,8 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
         }
     }
 
-    protected boolean hasPendingControlRequest() {
-        return (pendingControlRequest != null);
+    protected boolean hasPendingSetVariableRequest() {
+        return (pendingSetVariableRequest != null);
     }
 
     protected Double getLastTempF() {
@@ -177,6 +176,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
             Double newTempF = response.getSpaceTemp();
             Double newHeatTempF = response.getHeatTemp();
             Double newCoolTempF = response.getCoolTemp();
+            Double setPointDelta = response.getSetPointDelta();
 
             List<VariableUpdate> updates = new ArrayList<>();
             if (lastMode == null || !lastMode.equals(newMode)) {
@@ -189,10 +189,10 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
                 updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TEMP_F, newTempF));
             }
             if (lastCoolTempF == null || !lastCoolTempF.equals(newCoolTempF)) {
-                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TARGET_COOL_TEMP_F, newCoolTempF));
+                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TARGET_TEMP_F, newCoolTempF));
             }
             if (lastHeatTempF == null || !lastHeatTempF.equals(newHeatTempF)) {
-                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TARGET_HEAT_TEMP_F, newHeatTempF));
+                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TARGET_TEMP_F, newHeatTempF));
             }
             if (updates.size() > 0) {
                 fireVariableUpdateNotifications(updates);
@@ -204,11 +204,14 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
             lastCoolTempF = newCoolTempF;
             lastHeatTempF = newHeatTempF;
 
-            // if there's a pending control request, send it now that we have the latest status from the thermostat
-            if (hasPendingControlRequest()) {
-                pendingControlRequest.updateIfNull(response.getMode(), response.getFanMode(), newHeatTempF, newCoolTempF, null);
-                channel.sendControlRequest(pendingControlRequest);
-                pendingControlRequest = null;
+            // if there's a pending set variable request, send it now that we have the latest status from the thermostat
+            if (hasPendingSetVariableRequest()) {
+                Double targetTempF = null;
+                if (VariableConstants.TARGET_TEMP_F.equals(pendingSetVariableRequest.getName())) {
+                    targetTempF = getDouble(pendingSetVariableRequest.getValue());
+                }
+                channel.sendControlRequest(ControlRequest.create(uri, getId(), newMode, newFanMode, newHeatTempF, newCoolTempF, setPointDelta, newTempF, targetTempF, null));
+                pendingSetVariableRequest = null;
             }
         } else if (error != null) {
             logger.error("Error retrieving state info for device: " + getId(), error);
