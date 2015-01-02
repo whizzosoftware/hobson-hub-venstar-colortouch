@@ -9,6 +9,7 @@ package com.whizzosoftware.hobson.venstar;
 
 import com.whizzosoftware.hobson.api.HobsonNotFoundException;
 import com.whizzosoftware.hobson.api.HobsonRuntimeException;
+import com.whizzosoftware.hobson.api.config.ConfigurationPropertyMetaData;
 import com.whizzosoftware.hobson.api.device.HobsonDevice;
 import com.whizzosoftware.hobson.api.disco.DeviceAdvertisement;
 import com.whizzosoftware.hobson.api.event.DeviceAdvertisementEvent;
@@ -40,6 +41,7 @@ import java.util.*;
 public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateContext, ColorTouchChannel {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    public static final String PROP_THERMOSTAT_HOST = "thermostat.host";
     private static final long DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 10;
 
     private long refreshIntervalInSeconds;
@@ -63,11 +65,16 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
 
     @Override
     public void onStartup(Dictionary config) {
+        addConfigurationPropertyMetaData(new ConfigurationPropertyMetaData("thermostat.host", "Thermostat Host", "The hostname or IP address of a ColorTouch thermostat", ConfigurationPropertyMetaData.Type.STRING));
+
         // set to running status
         setStatus(new PluginStatus(PluginStatus.Status.RUNNING));
 
         // request SSDP device advertisements events that occurred before this plugin started
         requestDeviceAdvertisementSnapshot(SSDPPacket.PROTOCOL_ID);
+
+        // check if a thermostat has been manually configured
+        addManualHostIfNotDiscovered((String) config.get(PROP_THERMOSTAT_HOST));
     }
 
     @Override
@@ -97,6 +104,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
 
     @Override
     public void onPluginConfigurationUpdate(Dictionary config) {
+        addManualHostIfNotDiscovered((String)config.get(PROP_THERMOSTAT_HOST));
     }
 
     @Override
@@ -113,23 +121,36 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
             if ("ssdp".equals(advertisement.getProtocolId())) {
                 final SSDPPacket ssdp = (SSDPPacket)advertisement.getObject();
                 if (ssdp != null && ssdp.getLocation() != null) {
-                    logger.trace("Got SSDP advertisement: {}, {}", ssdp.getST(), ssdp.getLocation());
-                    if (((ssdp.getST() != null && ssdp.getST().equals("colortouch:ecp")) || (ssdp.getNT() != null && ssdp.getNT().equals("colortouch:ecp"))) && !discoveredURIs.contains(ssdp.getLocation())) {
-                        synchronized (discoveredURIs) {
-                            if (!discoveredURIs.contains(ssdp.getLocation())) {
-                                logger.info("Found ColorTouch thermostat at {}", ssdp.getLocation());
-                                try {
-                                    discoveredURIs.add(new URI(ssdp.getLocation()));
-                                    state.onThermostatFound(this);
-                                } catch (URISyntaxException e) {
-                                    logger.error("ColorTouch thermostat location is not a valid URI; ignoring", e);
-                                }
-                            }
+                    try {
+                        URI uri = new URI(ssdp.getLocation());
+                        if (ssdp.getNT() != null && ssdp.getNT().equals("colortouch:ecp") && !discoveredURIs.contains(uri)) {
+                            logger.info("Found ColorTouch thermostat at {}", ssdp.getLocation());
+                            discoveredURIs.add(uri);
+                            state.onThermostatFound(this);
+                            // TODO: make sure not to overwrite this property
+                            setPluginConfigurationProperty(getId(), PROP_THERMOSTAT_HOST, uri.getHost());
                         }
+                    } catch (URISyntaxException e) {
+                        logger.error("ColorTouch thermostat location is not a valid URI; ignoring", e);
                     }
                 } else {
                     logger.warn("Received device advertisement with no SSDP packet");
                 }
+            }
+        }
+    }
+
+    private void addManualHostIfNotDiscovered(String manualHost) {
+        // check if a thermostat has been manually configured
+        if (manualHost != null) {
+            try {
+                URI uri = new URI("http://" + manualHost + "/");
+                if (!discoveredURIs.contains(uri)) {
+                    discoveredURIs.add(uri);
+                    state.onThermostatFound(this);
+                }
+            } catch (URISyntaxException e) {
+                logger.error("Invalid thermostat host configured; ignoring", e);
             }
         }
     }
@@ -160,11 +181,13 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     @Override
     public boolean hasThermostatWithHost(String host) {
         Collection<HobsonDevice> devices = getAllDevices();
-        for (HobsonDevice device : devices) {
-            if (device instanceof ColorTouchThermostat) {
-                ColorTouchThermostat ctt = (ColorTouchThermostat)device;
-                if (ctt.getBaseURI().getHost().equals(host)) {
-                    return true;
+        if (devices != null) {
+            for (HobsonDevice device : devices) {
+                if (device instanceof ColorTouchThermostat) {
+                    ColorTouchThermostat ctt = (ColorTouchThermostat) device;
+                    if (ctt.getBaseURI().getHost().equals(host)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -181,11 +204,13 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     @Override
     public void refreshAllThermostats() {
         Collection<HobsonDevice> devices = getAllDevices();
-        for (HobsonDevice device : devices) {
-            if (device instanceof ColorTouchThermostat) {
-                ((ColorTouchThermostat)device).refresh();
-            } else {
-                logger.error("Unable to refresh unknown device: {}", device.getId());
+        if (devices != null) {
+            for (HobsonDevice device : devices) {
+                if (device instanceof ColorTouchThermostat) {
+                    ((ColorTouchThermostat) device).refresh();
+                } else {
+                    logger.error("Unable to refresh unknown device: {}", device.getId());
+                }
             }
         }
     }
