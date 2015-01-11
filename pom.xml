@@ -4,7 +4,7 @@
     <groupId>com.whizzosoftware.hobson.hub</groupId>
     <artifactId>hobson-hub-venstar-colortouch</artifactId>
     <packaging>bundle</packaging>
-    <version>0.1.4-SNAPSHOT</version>
+    <version>0.2.0-SNAPSHOT</version>
     <name>Venstar ColorTouch Plugin</name>
     <description>Provides the ability to control Venstar ColorTouch thermostats.</description>
     <dependencies>
@@ -23,7 +23,7 @@
         <dependency>
             <groupId>com.whizzosoftware.hobson.hub</groupId>
             <artifactId>hobson-hub-api</artifactId>
-            <version>0.2.2-SNAPSHOT</version>
+            <version>0.3.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -41,25 +41,13 @@
         <dependency>
             <groupId>com.whizzosoftware.hobson.hub</groupId>
             <artifactId>hobson-hub-api-mock</artifactId>
-            <version>0.2.2-SNAPSHOT</version>
+            <version>0.3.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-transport</artifactId>
             <version>4.0.21.Final</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore-osgi</artifactId>
-            <version>4.3.3</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpasyncclient-osgi</artifactId>
-            <version>4.0.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
