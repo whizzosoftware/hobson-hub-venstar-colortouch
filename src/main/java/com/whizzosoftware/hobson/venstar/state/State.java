@@ -7,10 +7,7 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar.state;
 
-import com.whizzosoftware.hobson.venstar.api.dto.InfoRequest;
-import com.whizzosoftware.hobson.venstar.api.dto.InfoResponse;
-import com.whizzosoftware.hobson.venstar.api.dto.RootRequest;
-import com.whizzosoftware.hobson.venstar.api.dto.RootResponse;
+import com.whizzosoftware.hobson.venstar.api.dto.*;
 
 /**
  * An interface that represents a single state in this plugin's finite state machine. The methods in the interface
@@ -62,4 +59,14 @@ public interface State {
      * @param error an Exception (or null if a successful response)
      */
     public void onInfoResponse(StateContext context, InfoRequest request, InfoResponse response, Throwable error);
+
+    /**
+     * Called when a "control response" is received from a thermostat.
+     *
+     * @param context the current state context
+     * @param request the ControlRequest object
+     * @param response a ControlResponse object (or null if it was an error)
+     * @param error an Exception (or null if a successful response)
+     */
+    public void onControlResponse(StateContext context, ControlRequest request, ControlResponse response, Throwable error);
 }

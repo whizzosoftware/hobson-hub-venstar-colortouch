@@ -18,6 +18,8 @@ import com.whizzosoftware.hobson.venstar.api.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -60,23 +62,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
     public void onStartup() {
         publishVariable(VariableConstants.TEMP_F, lastTempF, HobsonVariable.Mask.READ_ONLY);
         publishVariable(VariableConstants.TSTAT_MODE, lastMode, HobsonVariable.Mask.READ_WRITE);
-
-        Double temp = null;
-        if (lastMode != null) {
-            if (lastMode.equals(ThermostatMode.COOL.toString())) {
-                temp = lastCoolTempF;
-            } else if (lastMode.equals(ThermostatMode.HEAT.toString())) {
-                temp = lastHeatTempF;
-            } else if (lastMode.equals(ThermostatMode.AUTO.toString())) {
-                if (lastTempF < lastCoolTempF || lastTempF.equals(lastHeatTempF)) {
-                    temp = lastHeatTempF;
-                } else if (lastTempF > lastCoolTempF || lastTempF.equals(lastCoolTempF)) {
-                    temp = lastCoolTempF;
-                }
-            }
-        }
-
-        publishVariable(VariableConstants.TARGET_TEMP_F, temp, HobsonVariable.Mask.READ_WRITE);
+        publishVariable(VariableConstants.TARGET_TEMP_F, calculateTargetTemp(lastMode, lastCoolTempF, lastHeatTempF), HobsonVariable.Mask.READ_WRITE);
         publishVariable(VariableConstants.TSTAT_FAN_MODE, lastFanMode, HobsonVariable.Mask.READ_WRITE);
     }
 
@@ -169,7 +155,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
      * @param response an InfoResponse object
      * @param error a Throwable if an HTTP protocol-level error occurred
      */
-    public void onInfoResponse(InfoResponse response, Throwable error) {
+    public void onInfoResponse(InfoRequest request, InfoResponse response, Throwable error) {
         if (response != null) {
             String newMode = response.getMode().toString();
             String newFanMode = response.getFanMode().toString();
@@ -177,6 +163,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
             Double newHeatTempF = response.getHeatTemp();
             Double newCoolTempF = response.getCoolTemp();
             Double setPointDelta = response.getSetPointDelta();
+            Double newTargetTempF = calculateTargetTemp(newMode, newCoolTempF, newHeatTempF);
 
             List<VariableUpdate> updates = new ArrayList<>();
             if (lastMode == null || !lastMode.equals(newMode)) {
@@ -188,11 +175,8 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
             if (lastTempF == null || !lastTempF.equals(newTempF)) {
                 updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TEMP_F, newTempF));
             }
-            if (lastCoolTempF == null || !lastCoolTempF.equals(newCoolTempF)) {
-                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TARGET_TEMP_F, newCoolTempF));
-            }
-            if (lastHeatTempF == null || !lastHeatTempF.equals(newHeatTempF)) {
-                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TARGET_TEMP_F, newHeatTempF));
+            if (newTargetTempF != null) {
+                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TARGET_TEMP_F, newTargetTempF));
             }
             if (updates.size() > 0) {
                 fireVariableUpdateNotifications(updates);
@@ -214,7 +198,22 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
                 pendingSetVariableRequest = null;
             }
         } else if (error != null) {
-            logger.error("Error retrieving state info for device: " + getId(), error);
+            logger.error("Error retrieving state info for device " + getId() + " at " + request.getURI(), error);
+
+            // reset the last recorded values to force an update when new values are received
+            lastMode = null;
+            lastFanMode = null;
+            lastTempF = null;
+            lastCoolTempF = null;
+            lastHeatTempF = null;
+
+            // post a null variable update to indicate we no longer know the current values
+            List<VariableUpdate> updates = new ArrayList<>();
+            updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TSTAT_MODE, null));
+            updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TSTAT_FAN_MODE, null));
+            updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TEMP_F, null));
+            updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TARGET_TEMP_F, null));
+            fireVariableUpdateNotifications(updates);
         }
     }
 
@@ -223,14 +222,39 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
      * occur here. One is a response error which would be in the ControlResponse object if it occurred. The other is
      * a HTTP protocol error which would be the error param.
      *
+     * @param request the ControlRequest object
      * @param response the ControlResponse object
      * @param error a Throwable if an HTTP protocol-level error occurred
      */
-    public void onControlResponse(ControlResponse response, Throwable error) {
+    public void onControlResponse(ControlRequest request, ControlResponse response, Throwable error) {
         if (response != null) {
             logger.trace("Received successful control response");
         } else if (error != null) {
             logger.error("Error sending control request for device " + getId(), error);
         }
+    }
+
+    protected Double calculateTargetTemp(String mode, Double coolTempF, Double heatTempF) {
+        Double temp = null;
+        if (mode != null) {
+            if (mode.equals(ThermostatMode.COOL.toString())) {
+                temp = coolTempF;
+            } else if (mode.equals(ThermostatMode.HEAT.toString())) {
+                temp = heatTempF;
+            } else if (mode.equals(ThermostatMode.AUTO.toString())) {
+                return round(heatTempF + ((coolTempF - heatTempF) / 2.0), 0);
+            } else if (mode.equals(ThermostatMode.OFF.toString())) {
+                temp = null;
+            }
+        }
+        return temp;
+    }
+
+    public double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = new BigDecimal(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 }

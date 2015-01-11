@@ -7,10 +7,7 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar.state;
 
-import com.whizzosoftware.hobson.venstar.api.dto.InfoRequest;
-import com.whizzosoftware.hobson.venstar.api.dto.InfoResponse;
-import com.whizzosoftware.hobson.venstar.api.dto.RootRequest;
-import com.whizzosoftware.hobson.venstar.api.dto.RootResponse;
+import com.whizzosoftware.hobson.venstar.api.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,12 +100,24 @@ public class DiscoveryState implements State {
         if (response != null) {
             if (!context.hasThermostatWithHost(request.getURI().getHost())) {
                 context.addThermostat(request.getURI(), response);
+            } else if (request.getDeviceId() != null) {
+                context.getThermostatDevice(request.getDeviceId()).onInfoResponse(request, response, error);
             }
         } else if (error != null) {
             logger.error("Error requesting info from host " + request.getURI(), error);
+            if (request.getDeviceId() != null) {
+                context.getThermostatDevice(request.getDeviceId()).onInfoResponse(request, null, error);
+            }
         }
 
         switchStatesIfApplicable(context);
+    }
+
+    @Override
+    public void onControlResponse(StateContext context, ControlRequest request, ControlResponse response, Throwable error) {
+        if (request.getDeviceId() != null) {
+            context.getThermostatDevice(request.getDeviceId()).onControlResponse(request, response, error);
+        }
     }
 
     protected boolean hasPendingRequests() {

@@ -7,10 +7,9 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar.state;
 
-import com.whizzosoftware.hobson.venstar.api.dto.InfoRequest;
-import com.whizzosoftware.hobson.venstar.api.dto.InfoResponse;
-import com.whizzosoftware.hobson.venstar.api.dto.RootRequest;
-import com.whizzosoftware.hobson.venstar.api.dto.RootResponse;
+import com.whizzosoftware.hobson.venstar.api.dto.*;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 
 /**
  * Represents the "normal" running state of the plugin.
@@ -40,5 +39,15 @@ public class RunningState implements State {
 
     @Override
     public void onInfoResponse(StateContext context, InfoRequest request, InfoResponse response, Throwable error) {
+        if (request.getDeviceId() != null) {
+            context.getThermostatDevice(request.getDeviceId()).onInfoResponse(request, response, error);
+        }
+    }
+
+    @Override
+    public void onControlResponse(StateContext context, ControlRequest request, ControlResponse response, Throwable error) {
+        if (request.getDeviceId() != null) {
+            context.getThermostatDevice(request.getDeviceId()).onControlResponse(request, response, error);
+        }
     }
 }

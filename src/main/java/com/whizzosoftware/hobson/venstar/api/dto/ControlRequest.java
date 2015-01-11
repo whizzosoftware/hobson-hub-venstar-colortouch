@@ -47,15 +47,8 @@ public class ControlRequest {
                     break;
 
                 case AUTO:
-                    // according to the documentation, when the thermostat mode is "AUTO", cooltemp has to be higher than
-                    // heattemp and they have to be setpointdelta units apart.
-                    if (targetTemp < currentTemp) {
-                        cool = targetTemp;
-                        heat = Math.min(heatTemp, targetTemp - setPointDelta);
-                    } else {
-                        heat = targetTemp;
-                        cool = Math.max(coolTemp, targetTemp + setPointDelta);
-                    }
+                    heat = targetTemp - setPointDelta / 2;
+                    cool = targetTemp + setPointDelta / 2;
             }
         }
 

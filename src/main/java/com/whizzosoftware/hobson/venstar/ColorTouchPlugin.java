@@ -217,7 +217,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
 
     @Override
     public void doSetDeviceVariable(String deviceId, String name, Object value) {
-        getDevice(deviceId).onSetVariable(name, value);
+        getDevice(deviceId).getRuntime().onSetVariable(name, value);
     }
 
     @Override
@@ -250,15 +250,9 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
         if (context instanceof RootRequest) {
             state.onRootResponse(this, (RootRequest) context, new RootResponse(new JSONObject(new JSONTokener(response))), null);
         } else if (context instanceof InfoRequest) {
-            InfoRequest ir = (InfoRequest)context;
-            if (ir.hasDeviceId()) {
-                getThermostatDevice(ir.getDeviceId()).onInfoResponse(new InfoResponse(new JSONObject(new JSONTokener(response))), null);
-            } else {
-                state.onInfoResponse(this, (InfoRequest) context, new InfoResponse(new JSONObject(new JSONTokener(response))), null);
-            }
+            state.onInfoResponse(this, (InfoRequest)context, new InfoResponse(new JSONObject(new JSONTokener(response))), null);
         } else if (context instanceof ControlRequest) {
-            ControlRequest cr = (ControlRequest)context;
-            getThermostatDevice(cr.getDeviceId()).onControlResponse(new ControlResponse(new JSONObject(new JSONTokener(response))), null);
+            state.onControlResponse(this, (ControlRequest) context, new ControlResponse(new JSONObject(new JSONTokener(response))), null);
         } else {
             logger.error("Unknown HTTP response: " + context);
         }
@@ -269,25 +263,20 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
         if (context instanceof RootRequest) {
             state.onRootResponse(this, (RootRequest) context, null, cause);
         } else if (context instanceof InfoRequest) {
-            InfoRequest ir = (InfoRequest)context;
-            if (ir.hasDeviceId()) {
-                getThermostatDevice(ir.getDeviceId()).onInfoResponse(null, cause);
-            } else {
-                state.onInfoResponse(this, (InfoRequest) context, null, cause);
-            }
+            state.onInfoResponse(this, (InfoRequest)context, null, cause);
         } else if (context instanceof ControlRequest) {
-            ControlRequest cr = (ControlRequest)context;
-            getThermostatDevice(cr.getDeviceId()).onControlResponse(null, cause);
+            state.onControlResponse(this, (ControlRequest) context, null, cause);
         } else {
             logger.error("Unknown HTTP request failure: " + context, cause);
         }
     }
 
     // ***
-    // Other methods
+    // StateContext methods
     // ***
 
-    protected ColorTouchThermostat getThermostatDevice(String deviceId) {
+    @Override
+    public ColorTouchThermostat getThermostatDevice(String deviceId) {
         HobsonDevice device = getDevice(deviceId);
         if (!(device instanceof ColorTouchThermostat)) {
             throw new HobsonNotFoundException("Device " + deviceId + " found but it's not a ColorTouch thermostat: " + device);
