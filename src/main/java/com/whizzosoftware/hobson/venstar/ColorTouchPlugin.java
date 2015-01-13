@@ -44,18 +44,12 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     public static final String PROP_THERMOSTAT_HOST = "thermostat.host";
     private static final long DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 10;
 
-    private long refreshIntervalInSeconds;
     private State state;
     private final List<URI> discoveredURIs = new ArrayList<>();
     private boolean hasAtLeastOneThermostat;
 
     public ColorTouchPlugin(String pluginId) {
-        this(pluginId, DEFAULT_REFRESH_INTERVAL_IN_SECONDS);
-    }
-
-    public ColorTouchPlugin(String pluginId, long refreshIntervalInSeconds) {
         super(pluginId);
-        this.refreshIntervalInSeconds = refreshIntervalInSeconds;
         this.state = new DiscoveryState();
     }
 
@@ -88,7 +82,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
 
     @Override
     public long getRefreshInterval() {
-        return refreshIntervalInSeconds;
+        return DEFAULT_REFRESH_INTERVAL_IN_SECONDS;
     }
 
     @Override
