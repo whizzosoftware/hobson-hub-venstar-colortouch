@@ -292,7 +292,9 @@ public class ColorTouchThermostatTest {
 
         // send a successful InfoResponse
         plugin.onHttpResponse(200, null, "{\"name\": \"Office\",\"mode\": 3,\"state\": 0,\"fan\": 0,\"fanstate\": 0,\"tempunits\": 0,\"schedule\": 0,\"schedulepart\": 0,\"away\": 0,\"holiday\": 0,\"override\": 0,\"overridetime\": 0,\"forceunocc\": 0,\"spacetemp\": 79,\"heattemp\": 78,\"cooltemp\": 75,\"cooltempmin\": 35,\"cooltempmax\": 99,\"heattempmin\": 35,\"heattempmax\": 99,\"setpointdelta\": 2,\"availablemodes\": 0}", new InfoRequest(uri, ctt.getId()));
-        assertEquals(0, vp.getVariableUpdates().size());
+        assertEquals(4, vp.getVariableUpdates().size());
+
+        vp.clearVariableUpdates();
 
         // send an InfoRequest failure
         plugin.onHttpRequestFailure(new RuntimeException(), new InfoRequest(uri, ctt.getId()));
