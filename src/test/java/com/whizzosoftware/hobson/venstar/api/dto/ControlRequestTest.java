@@ -62,7 +62,7 @@ public class ControlRequestTest {
         URI uri = new URI("http://192.168.0.129");
 
         // test cool mode with target temp lower than current temp
-        ControlRequest cr = ControlRequest.create(uri, "id", "COOL", "AUTO", 72.0, 73.0, 2.0, 80.0, 71.0, null);
+        ControlRequest cr = ControlRequest.create(uri, "id", "COOL", "AUTO", 72.0, 73.0, 2.0, 71.0, null);
         Map<String,String> map = cr.getRequestBodyMap();
         assertEquals(4, map.size());
         assertEquals("71.0", map.get("cooltemp"));
@@ -71,7 +71,7 @@ public class ControlRequestTest {
         assertEquals("0", map.get("fan"));
 
         // test cool mode with target temp higher than current temp
-        cr = ControlRequest.create(uri, "id", "COOL", "AUTO", 72.0, 73.0, 2.0, 70.0, 71.0, null);
+        cr = ControlRequest.create(uri, "id", "COOL", "AUTO", 72.0, 73.0, 2.0, 71.0, null);
         map = cr.getRequestBodyMap();
         assertEquals(4, map.size());
         assertEquals("71.0", map.get("cooltemp"));
@@ -80,7 +80,7 @@ public class ControlRequestTest {
         assertEquals("0", map.get("fan"));
 
         // test cool mode with target temp equal to current temp
-        cr = ControlRequest.create(uri, "id", "COOL", "AUTO", 72.0, 73.0, 2.0, 70.0, 70.0, null);
+        cr = ControlRequest.create(uri, "id", "COOL", "AUTO", 72.0, 73.0, 2.0, 70.0, null);
         map = cr.getRequestBodyMap();
         assertEquals(4, map.size());
         assertEquals("70.0", map.get("cooltemp"));
@@ -89,7 +89,7 @@ public class ControlRequestTest {
         assertEquals("0", map.get("fan"));
 
         // test heat mode with target temp higher than current temp
-        cr = ControlRequest.create(uri, "id", "HEAT", "AUTO", 72.0, 73.0, 2.0, 55.0, 71.0, null);
+        cr = ControlRequest.create(uri, "id", "HEAT", "AUTO", 72.0, 73.0, 2.0, 71.0, null);
         map = cr.getRequestBodyMap();
         assertEquals(4, map.size());
         assertEquals("71.0", map.get("heattemp"));
@@ -98,7 +98,7 @@ public class ControlRequestTest {
         assertEquals("0", map.get("fan"));
 
         // test heat mode with target temp lower than current temp
-        cr = ControlRequest.create(uri, "id", "HEAT", "AUTO", 72.0, 73.0, 2.0, 72.0, 71.0, null);
+        cr = ControlRequest.create(uri, "id", "HEAT", "AUTO", 72.0, 73.0, 2.0, 71.0, null);
         map = cr.getRequestBodyMap();
         assertEquals(4, map.size());
         assertEquals("71.0", map.get("heattemp"));
@@ -107,7 +107,7 @@ public class ControlRequestTest {
         assertEquals("0", map.get("fan"));
 
         // test heat mode with target temp equal to current temp
-        cr = ControlRequest.create(uri, "id", "HEAT", "AUTO", 72.0, 73.0, 2.0, 71.0, 71.0, null);
+        cr = ControlRequest.create(uri, "id", "HEAT", "AUTO", 72.0, 73.0, 2.0, 71.0, null);
         map = cr.getRequestBodyMap();
         assertEquals(4, map.size());
         assertEquals("71.0", map.get("heattemp"));
@@ -116,7 +116,7 @@ public class ControlRequestTest {
         assertEquals("0", map.get("fan"));
 
         // test auto mode with target temp higher than current temp
-        cr = ControlRequest.create(uri, "id", "AUTO", "AUTO", 72.0, 73.0, 2.0, 55.0, 71.0, null);
+        cr = ControlRequest.create(uri, "id", "AUTO", "AUTO", 72.0, 73.0, 2.0, 71.0, null);
         map = cr.getRequestBodyMap();
         assertEquals(4, map.size());
         assertEquals("70.0", map.get("heattemp"));
@@ -125,7 +125,7 @@ public class ControlRequestTest {
         assertEquals("0", map.get("fan"));
 
         // test auto mode with target temp lower than current temp
-        cr = ControlRequest.create(uri, "id", "AUTO", "AUTO", 72.0, 73.0, 2.0, 80.0, 72.0, null);
+        cr = ControlRequest.create(uri, "id", "AUTO", "AUTO", 72.0, 73.0, 2.0, 72.0, null);
         map = cr.getRequestBodyMap();
         assertEquals(4, map.size());
         assertEquals("73.0", map.get("cooltemp"));
@@ -134,7 +134,7 @@ public class ControlRequestTest {
         assertEquals("0", map.get("fan"));
 
         // test auto mode with target temp lower than current temp
-        cr = ControlRequest.create(uri, "id", "AUTO", "AUTO", 72.0, 73.0, 2.0, 71.0, 70.0, null);
+        cr = ControlRequest.create(uri, "id", "AUTO", "AUTO", 72.0, 73.0, 2.0, 70.0, null);
         map = cr.getRequestBodyMap();
         assertEquals(4, map.size());
         assertEquals("71.0", map.get("cooltemp"));

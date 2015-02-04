@@ -21,7 +21,7 @@ public interface State {
      *
      * @param context the current state context
      */
-    public void onRefresh(StateContext context);
+    public void onRefresh(StateContext context, long now);
 
     /**
      * Callback when a new thermostat is found.

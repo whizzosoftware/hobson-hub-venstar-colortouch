@@ -22,7 +22,7 @@ public class DiscoveryStateTest {
         MockStateContext context = new MockStateContext();
         DiscoveryState state = new DiscoveryState();
         assertFalse(context.getRefreshFlag());
-        state.onRefresh(context);
+        state.onRefresh(context, System.currentTimeMillis());
         assertTrue(context.getRefreshFlag());
     }
 
@@ -34,7 +34,7 @@ public class DiscoveryStateTest {
         assertNull(context.getState());
         assertEquals(0, context.getDiscoveredHostCount());
 
-        state.onRefresh(context);
+        state.onRefresh(context, System.currentTimeMillis());
 
         // make sure the state didn't change and no devices were created
         assertNull(context.getState());
@@ -57,7 +57,7 @@ public class DiscoveryStateTest {
         assertEquals(0, context.getInfoRequests().size());
 
         // call refresh
-        state.onRefresh(context);
+        state.onRefresh(context, System.currentTimeMillis());
 
         // make sure one root request went out and it was to the correct address
         assertEquals(1, context.getRootRequests().size());
@@ -103,7 +103,7 @@ public class DiscoveryStateTest {
         assertEquals(0, context.getInfoRequests().size());
 
         // call refresh
-        state.onRefresh(context);
+        state.onRefresh(context, System.currentTimeMillis());
 
         // make sure one root request went out and it was to the correct address
         assertEquals(1, context.getRootRequests().size());
@@ -137,7 +137,7 @@ public class DiscoveryStateTest {
         assertEquals(0, context.getInfoRequests().size());
 
         // call refresh
-        state.onRefresh(context);
+        state.onRefresh(context, System.currentTimeMillis());
 
         // make sure one root request went out and it was to the correct address
         assertEquals(1, context.getRootRequests().size());
@@ -170,7 +170,7 @@ public class DiscoveryStateTest {
         assertEquals(0, context.getInfoRequests().size());
 
         // call refresh
-        state.onRefresh(context);
+        state.onRefresh(context, System.currentTimeMillis());
 
         // make sure one root request went out and it was to the correct address
         assertEquals(1, context.getRootRequests().size());
@@ -214,7 +214,7 @@ public class DiscoveryStateTest {
         assertEquals(0, context.getRootRequests().size());
 
         // call refresh
-        state.onRefresh(context);
+        state.onRefresh(context, System.currentTimeMillis());
 
         // make sure one info request went out
         assertEquals(1, context.getRootRequests().size());
@@ -248,7 +248,7 @@ public class DiscoveryStateTest {
         assertEquals(0, context.getRootRequests().size());
 
         // call refresh
-        state.onRefresh(context);
+        state.onRefresh(context, System.currentTimeMillis());
 
         // make sure one info request went out
         assertEquals(1, context.getRootRequests().size());
@@ -278,7 +278,7 @@ public class DiscoveryStateTest {
         assertEquals(1, context.getDiscoveredHostCount());
 
         // refresh
-        state.onRefresh(context);
+        state.onRefresh(context, System.currentTimeMillis());
 
         // we should be in the running state again with the number of created thermostats
         assertTrue(context.getState() instanceof RunningState);
@@ -297,7 +297,7 @@ public class DiscoveryStateTest {
         assertEquals(2, context.getDiscoveredHostCount());
 
         // refresh
-        state.onRefresh(context);
+        state.onRefresh(context, System.currentTimeMillis());
 
         // confirm that two root requests went out
         assertEquals(2, context.getRootRequests().size());

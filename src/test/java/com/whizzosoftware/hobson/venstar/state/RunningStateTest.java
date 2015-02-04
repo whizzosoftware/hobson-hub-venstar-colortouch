@@ -16,7 +16,7 @@ public class RunningStateTest {
         MockStateContext context = new MockStateContext();
         RunningState state = new RunningState();
         assertFalse(context.getRefreshFlag());
-        state.onRefresh(context);
+        state.onRefresh(context, System.currentTimeMillis());
         assertTrue(context.getRefreshFlag());
     }
 

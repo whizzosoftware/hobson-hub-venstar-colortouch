@@ -25,7 +25,7 @@ public interface StateContext extends ColorTouchChannel {
     public boolean hasThermostats();
     public boolean hasThermostatWithHost(String host);
     public void addThermostat(URI baseURI, InfoResponse info);
-    public void refreshAllThermostats();
+    public void refreshAllThermostats(long now);
     public void doSetDeviceVariable(String deviceId, String name, Object value);
     public ColorTouchThermostat getThermostatDevice(String deviceId);
 }

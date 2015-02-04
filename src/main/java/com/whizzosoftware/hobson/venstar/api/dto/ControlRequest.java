@@ -31,7 +31,7 @@ public class ControlRequest {
     private Double coolTemp;
     private Integer pin;
 
-    static public ControlRequest create(URI baseURI, String deviceId, String mode, String fan, Double heatTemp, Double coolTemp, Double setPointDelta, Double currentTemp, Double targetTemp, Integer pin) {
+    static public ControlRequest create(URI baseURI, String deviceId, String mode, String fan, Double heatTemp, Double coolTemp, Double setPointDelta, Double targetTemp, Integer pin) {
         ThermostatMode tmode = (mode != null) ? ThermostatMode.valueOf(mode) : null;
         Double heat = heatTemp;
         Double cool = coolTemp;

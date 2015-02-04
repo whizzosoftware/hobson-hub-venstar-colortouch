@@ -70,7 +70,7 @@ public class MockStateContext implements StateContext {
     }
 
     @Override
-    public void refreshAllThermostats() {
+    public void refreshAllThermostats(long now) {
         refreshFlag = true;
     }
 

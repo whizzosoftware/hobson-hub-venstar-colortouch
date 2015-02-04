@@ -30,9 +30,10 @@ public class DiscoveryState implements State {
 
     private List<RootRequest> pendingRootRequests = new ArrayList<>();
     private List<InfoRequest> pendingInfoRequests = new ArrayList<>();
+    private boolean firmwareWarning = false;
 
     @Override
-    public void onRefresh(StateContext context) {
+    public void onRefresh(StateContext context, long now) {
         // check if any discovered addresses are ones without an associated thermostat
         Collection<URI> uris = context.getDiscoveredURIs();
         for (URI uri : uris) {
@@ -50,14 +51,14 @@ public class DiscoveryState implements State {
         }
 
         // refresh all current thermostats
-        context.refreshAllThermostats();
+        context.refreshAllThermostats(now);
 
         switchStatesIfApplicable(context);
     }
 
     @Override
     public void onThermostatFound(StateContext context) {
-        onRefresh(context);
+        onRefresh(context, System.currentTimeMillis());
     }
 
     @Override
@@ -73,13 +74,16 @@ public class DiscoveryState implements State {
 
         if (response != null) {
             try {
-                if (response.getApiVersion() == 3) {
+                if (response.getApiVersion() >= 3 && response.getApiVersion() <= 4) {
                     logger.trace("Sending info request to thermostat at {}", request.getURI());
                     InfoRequest ir = new InfoRequest(request.getURI());
                     context.sendInfoRequest(ir);
                     pendingInfoRequests.add(ir);
                 } else {
-                    logger.warn("Found ColorTouch thermostat with unsupported API version " + response.getApiVersion() + "; ignoring");
+                    if (!firmwareWarning) {
+                        logger.warn("Found ColorTouch thermostat with unsupported API version " + response.getApiVersion() + "; ignoring");
+                        firmwareWarning = true;
+                    }
                 }
             } catch (URISyntaxException e) {
                 logger.error("Found invalid host address when processing new thermostat", e);
@@ -101,12 +105,12 @@ public class DiscoveryState implements State {
             if (!context.hasThermostatWithHost(request.getURI().getHost())) {
                 context.addThermostat(request.getURI(), response);
             } else if (request.getDeviceId() != null) {
-                context.getThermostatDevice(request.getDeviceId()).onInfoResponse(request, response, error);
+                context.getThermostatDevice(request.getDeviceId()).onInfoResponse(request, response, error, System.currentTimeMillis());
             }
         } else if (error != null) {
             logger.error("Error requesting info from host " + request.getURI(), error);
             if (request.getDeviceId() != null) {
-                context.getThermostatDevice(request.getDeviceId()).onInfoResponse(request, null, error);
+                context.getThermostatDevice(request.getDeviceId()).onInfoResponse(request, null, error, System.currentTimeMillis());
             }
         }
 

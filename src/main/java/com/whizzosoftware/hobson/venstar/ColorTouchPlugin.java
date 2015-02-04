@@ -42,7 +42,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public static final String PROP_THERMOSTAT_HOST = "thermostat.host";
-    private static final long DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 10;
+    private static final long DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 1;
 
     private State state;
     private final List<URI> discoveredURIs = new ArrayList<>();
@@ -93,7 +93,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
 
     @Override
     public void onRefresh() {
-        state.onRefresh(this);
+        state.onRefresh(this, System.currentTimeMillis());
     }
 
     @Override
@@ -196,12 +196,12 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     }
 
     @Override
-    public void refreshAllThermostats() {
+    public void refreshAllThermostats(long now) {
         Collection<HobsonDevice> devices = getAllDevices();
         if (devices != null) {
             for (HobsonDevice device : devices) {
                 if (device instanceof ColorTouchThermostat) {
-                    ((ColorTouchThermostat) device).refresh();
+                    ((ColorTouchThermostat) device).onRefresh(now);
                 } else {
                     logger.error("Unable to refresh unknown device: {}", device.getId());
                 }

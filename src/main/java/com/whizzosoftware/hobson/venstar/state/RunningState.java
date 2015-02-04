@@ -18,8 +18,8 @@ import org.json.JSONTokener;
  */
 public class RunningState implements State {
     @Override
-    public void onRefresh(StateContext context) {
-        context.refreshAllThermostats();
+    public void onRefresh(StateContext context, long now) {
+        context.refreshAllThermostats(now);
     }
 
     @Override
@@ -40,7 +40,7 @@ public class RunningState implements State {
     @Override
     public void onInfoResponse(StateContext context, InfoRequest request, InfoResponse response, Throwable error) {
         if (request.getDeviceId() != null) {
-            context.getThermostatDevice(request.getDeviceId()).onInfoResponse(request, response, error);
+            context.getThermostatDevice(request.getDeviceId()).onInfoResponse(request, response, error, System.currentTimeMillis());
         }
     }
 

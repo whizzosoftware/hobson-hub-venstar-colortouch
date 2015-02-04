@@ -15,6 +15,8 @@ import com.whizzosoftware.hobson.api.variable.VariableConstants;
 import com.whizzosoftware.hobson.api.variable.VariableUpdate;
 import com.whizzosoftware.hobson.venstar.api.ColorTouchChannel;
 import com.whizzosoftware.hobson.venstar.api.dto.*;
+import com.whizzosoftware.hobson.venstar.state.PendingConfirmation;
+import com.whizzosoftware.hobson.venstar.state.VariableState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,37 +35,57 @@ import java.util.List;
 public class ColorTouchThermostat extends AbstractHobsonDevice {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    protected static final long DEFAULT_REFRESH_INTERVAL_IN_MS_NO_PENDING_CONFIRMS = 10000;
+    protected static final long DEFAULT_REFRESH_INTERVAL_IN_MS_PENDING_CONFIRMS = 1000;
+    protected static final long DEFAULT_INFO_RESPONSE_TIMEOUT = 5000;
+
     private ColorTouchChannel channel;
     private URI uri;
     private String defaultName;
-    private Double lastTempF;
-    private Double lastCoolTempF;
-    private Double lastHeatTempF;
-    private String lastMode;
-    private String lastFanMode;
-    private PendingSetVariableRequest pendingSetVariableRequest;
+    /**
+     * This represents the current state of the thermostat (based on the last info response received)
+     */
+    private VariableState currentState;
+    /**
+     * Indicates the last time the refresh() method was called
+     */
+    private long lastRefresh;
+    /**
+     * Indicates the last time an info request was made
+     */
+    private Long pendingInfoRequestTime;
+    /**
+     * This represents a pending confirmation we are awaiting (based on the last control request sent)
+     */
+    private final PendingConfirmation pendingConfirmation = new PendingConfirmation();
 
     public ColorTouchThermostat(HobsonPlugin plugin, ColorTouchChannel channel, URI uri, InfoResponse info) {
         super(plugin, uri.getHost().replace('.', '-'));
 
         this.channel = channel;
         this.uri = uri;
+        this.currentState = new VariableState();
         if (info != null) {
             this.defaultName = info.getName();
-            this.lastTempF = info.getSpaceTemp();
-            this.lastCoolTempF = info.getCoolTemp();
-            this.lastHeatTempF = info.getHeatTemp();
-            this.lastMode = info.getMode().toString();
-            this.lastFanMode = info.getFanMode().toString();
+            // set the current state to the InfoResponse argument
+            this.currentState.update(
+                    info.getMode().toString(),
+                    info.getFanMode().toString(),
+                    info.getSpaceTemp(),
+                    info.getCoolTemp(),
+                    info.getHeatTemp(),
+                    calculateTargetTemp(info.getMode().toString(), info.getCoolTemp(), info.getHeatTemp())
+            );
         }
     }
 
     @Override
     public void onStartup() {
-        publishVariable(VariableConstants.TEMP_F, lastTempF, HobsonVariable.Mask.READ_ONLY);
-        publishVariable(VariableConstants.TSTAT_MODE, lastMode, HobsonVariable.Mask.READ_WRITE);
-        publishVariable(VariableConstants.TARGET_TEMP_F, calculateTargetTemp(lastMode, lastCoolTempF, lastHeatTempF), HobsonVariable.Mask.READ_WRITE);
-        publishVariable(VariableConstants.TSTAT_FAN_MODE, lastFanMode, HobsonVariable.Mask.READ_WRITE);
+        // publish necessary variables
+        publishVariable(VariableConstants.TEMP_F, currentState.getTempF(), HobsonVariable.Mask.READ_ONLY);
+        publishVariable(VariableConstants.TSTAT_MODE, currentState.getMode(), HobsonVariable.Mask.READ_WRITE);
+        publishVariable(VariableConstants.TARGET_TEMP_F, currentState.getTargetTempF(), HobsonVariable.Mask.READ_WRITE);
+        publishVariable(VariableConstants.TSTAT_FAN_MODE, currentState.getFanMode(), HobsonVariable.Mask.READ_WRITE);
     }
 
     @Override
@@ -96,8 +118,14 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
         // thermostat for its latest values (in case the thermostat was changed through other means in between refresh
         // intervals) and will send a full control request when a response is received
         try {
-            pendingSetVariableRequest = new PendingSetVariableRequest(name, value);
-            channel.sendInfoRequest(new InfoRequest(getBaseURI(), getId()));
+            // set the pending confirmation state to new value
+            pendingConfirmation.getState().setValue(name, value);
+
+            // if we're not already waiting on an info response, send a new info request
+            if (pendingInfoRequestTime == null) {
+                channel.sendInfoRequest(new InfoRequest(getBaseURI(), getId()));
+                pendingInfoRequestTime = System.currentTimeMillis();
+            }
         } catch (URISyntaxException e) {
             logger.error("Error refreshing thermostat: " + getId(), e);
         }
@@ -107,46 +135,42 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
         return uri;
     }
 
-    public void refresh() {
-        try {
-            channel.sendInfoRequest(new InfoRequest(getBaseURI(), getId()));
-        } catch (URISyntaxException e) {
-            logger.error("Error refreshing thermostat: " + getId(), e);
+    public void onRefresh(long now) {
+        // by default, our check interval assumes no pending control confirmations
+        long checkInterval = DEFAULT_REFRESH_INTERVAL_IN_MS_NO_PENDING_CONFIRMS;
+
+        // if we're waiting on a control request confirmation...
+        if (hasPendingControlConfirmation()) {
+            // if there's been a timout, stop waiting for the confirmation
+            if (pendingConfirmation.hasTimeout(now)) {
+                pendingConfirmation.clear();
+                logger.warn("A timeout occurred waiting for a control request confirmation");
+            // otherwise, set the check interval appropriately (basically, we want to check with the thermostat more
+            // frequently (up to a timeout interval) when there's a control request that's awaiting confirmation
+            } else {
+                checkInterval = DEFAULT_REFRESH_INTERVAL_IN_MS_PENDING_CONFIRMS;
+            }
+        }
+
+        // if we've exceeded the refresh interval and there's no pending info request or the last request timed out...
+        if (now - lastRefresh >= checkInterval && (pendingInfoRequestTime == null || now - pendingInfoRequestTime >= DEFAULT_INFO_RESPONSE_TIMEOUT)) {
+            // send a new info request to the thermostat
+            try {
+                channel.sendInfoRequest(new InfoRequest(getBaseURI(), getId()));
+                pendingInfoRequestTime = System.currentTimeMillis();
+                lastRefresh = now;
+            } catch (URISyntaxException e) {
+                logger.error("Error refreshing thermostat: " + getId(), e);
+            }
         }
     }
 
-    public Double getDouble(Object value) {
-        if (value instanceof Double) {
-            return (Double)value;
-        } else if (value instanceof Integer) {
-            return (double)(Integer)value;
-        } else {
-            return Double.parseDouble(value.toString());
-        }
+    protected VariableState getCurrentState() {
+        return currentState;
     }
 
-    protected boolean hasPendingSetVariableRequest() {
-        return (pendingSetVariableRequest != null);
-    }
-
-    protected Double getLastTempF() {
-        return lastTempF;
-    }
-
-    protected Double getLastCoolTempF() {
-        return lastCoolTempF;
-    }
-
-    protected Double getLastHeatTempF() {
-        return lastHeatTempF;
-    }
-
-    protected String getLastMode() {
-        return lastMode;
-    }
-
-    protected String getLastFanMode() {
-        return lastFanMode;
+    protected boolean hasPendingControlConfirmation() {
+        return pendingConfirmation.getState().hasValues();
     }
 
     /**
@@ -155,57 +179,76 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
      * @param response an InfoResponse object
      * @param error a Throwable if an HTTP protocol-level error occurred
      */
-    public void onInfoResponse(InfoRequest request, InfoResponse response, Throwable error) {
-        if (response != null) {
-            String newMode = response.getMode().toString();
-            String newFanMode = response.getFanMode().toString();
-            Double newTempF = response.getSpaceTemp();
-            Double newHeatTempF = response.getHeatTemp();
-            Double newCoolTempF = response.getCoolTemp();
-            Double setPointDelta = response.getSetPointDelta();
-            Double newTargetTempF = calculateTargetTemp(newMode, newCoolTempF, newHeatTempF);
+    public void onInfoResponse(InfoRequest request, InfoResponse response, Throwable error, long now) {
+        pendingInfoRequestTime = null;
 
+        // if it's a good response, process it
+        if (response != null) {
+            // create a new variable state based on the response
+            VariableState responseState = new VariableState(
+                response.getMode().toString(),
+                response.getFanMode().toString(),
+                response.getSpaceTemp(),
+                response.getCoolTemp(),
+                response.getHeatTemp(),
+                calculateTargetTemp(response.getMode().toString(), response.getCoolTemp(), response.getHeatTemp())
+            );
+
+            // if the response state is not equal to the pending confirmation state, send a control request
+            if (!responseState.equals(pendingConfirmation.getState())) {
+                if (!pendingConfirmation.wasControlRequestSent()) {
+                    channel.sendControlRequest(ControlRequest.create(
+                        uri,
+                        getId(),
+                        pendingConfirmation.getState().hasMode() ? pendingConfirmation.getState().getMode() : responseState.getMode(),
+                        pendingConfirmation.getState().hasFanMode() ? pendingConfirmation.getState().getFanMode() : responseState.getFanMode(),
+                        pendingConfirmation.getState().hasHeatTempF() ? pendingConfirmation.getState().getHeatTempF() : responseState.getHeatTempF(),
+                        pendingConfirmation.getState().hasCoolTempF() ? pendingConfirmation.getState().getCoolTempF() : responseState.getCoolTempF(),
+                        response.getSetPointDelta(),
+                        pendingConfirmation.getState().hasTargetTempF() ? pendingConfirmation.getState().getTargetTempF() : responseState.getTargetTempF(),
+                        null)
+                    );
+                    pendingConfirmation.flagControlRequestSent(now);
+                }
+            } else {
+                pendingConfirmation.clear();
+            }
+
+            // build a list of variable updates based on any changes differences between current and response state
             List<VariableUpdate> updates = new ArrayList<>();
-            if (lastMode == null || !lastMode.equals(newMode)) {
-                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TSTAT_MODE, newMode));
+            if (!currentState.hasMode() || !currentState.getMode().equals(responseState.getMode())) {
+                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TSTAT_MODE, responseState.getMode()));
             }
-            if (lastFanMode == null || !lastFanMode.equals(newFanMode)) {
-                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TSTAT_FAN_MODE, newFanMode));
+            if (!currentState.hasFanMode() || !currentState.getFanMode().equals(responseState.getFanMode())) {
+                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TSTAT_FAN_MODE, responseState.getFanMode()));
             }
-            if (lastTempF == null || !lastTempF.equals(newTempF)) {
-                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TEMP_F, newTempF));
+            if (!currentState.hasTempF() || !currentState.getTempF().equals(responseState.getTempF())) {
+                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TEMP_F, responseState.getTempF()));
             }
-            if (newTargetTempF != null) {
-                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TARGET_TEMP_F, newTargetTempF));
+            if (!currentState.hasTargetTempF() || !currentState.getTargetTempF().equals(responseState.getTargetTempF())) {
+                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TARGET_TEMP_F, responseState.getTargetTempF()));
             }
+
+            // fire variable update notifications if necessary
             if (updates.size() > 0) {
                 fireVariableUpdateNotifications(updates);
             }
 
-            lastMode = newMode;
-            lastFanMode = newFanMode;
-            lastTempF = newTempF;
-            lastCoolTempF = newCoolTempF;
-            lastHeatTempF = newHeatTempF;
-
-            // if there's a pending set variable request, send it now that we have the latest status from the thermostat
-            if (hasPendingSetVariableRequest()) {
-                Double targetTempF = null;
-                if (VariableConstants.TARGET_TEMP_F.equals(pendingSetVariableRequest.getName())) {
-                    targetTempF = getDouble(pendingSetVariableRequest.getValue());
-                }
-                channel.sendControlRequest(ControlRequest.create(uri, getId(), newMode, newFanMode, newHeatTempF, newCoolTempF, setPointDelta, newTempF, targetTempF, null));
-                pendingSetVariableRequest = null;
-            }
+            // update the current state to reflect the response state
+            currentState.update(
+                responseState.getMode(),
+                responseState.getFanMode(),
+                responseState.getTempF(),
+                responseState.getCoolTempF(),
+                responseState.getHeatTempF(),
+                responseState.getTargetTempF()
+            );
+        // if it's an error, clear the current state
         } else if (error != null) {
             logger.error("Error retrieving state info for device " + getId() + " at " + request.getURI(), error);
 
             // reset the last recorded values to force an update when new values are received
-            lastMode = null;
-            lastFanMode = null;
-            lastTempF = null;
-            lastCoolTempF = null;
-            lastHeatTempF = null;
+            currentState.clear();
 
             // post a null variable update to indicate we no longer know the current values
             List<VariableUpdate> updates = new ArrayList<>();
