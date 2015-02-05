@@ -4,7 +4,7 @@
     <groupId>com.whizzosoftware.hobson.hub</groupId>
     <artifactId>hobson-hub-venstar-colortouch</artifactId>
     <packaging>bundle</packaging>
-    <version>0.3.1-SNAPSHOT</version>
+    <version>0.3.1</version>
     <name>Venstar ColorTouch Plugin</name>
     <description>Provides the ability to control Venstar ColorTouch thermostats.</description>
     <dependencies>
@@ -105,7 +105,7 @@
     <scm>
         <connection>scm:git:ssh://git@github.com/whizzosoftware/hobson-hub-venstar-colortouch.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/whizzosoftware/hobson-hub-venstar-colortouch.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>hobson-hub-venstar-colortouch-0.3.1</tag>
     </scm>
     <distributionManagement>
         <repository>
