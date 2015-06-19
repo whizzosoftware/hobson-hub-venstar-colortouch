@@ -7,6 +7,7 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar.state;
 
+import com.whizzosoftware.hobson.api.device.DeviceContext;
 import com.whizzosoftware.hobson.venstar.ColorTouchThermostat;
 import com.whizzosoftware.hobson.venstar.api.dto.ControlRequest;
 import com.whizzosoftware.hobson.venstar.api.dto.InfoRequest;
@@ -75,12 +76,12 @@ public class MockStateContext implements StateContext {
     }
 
     @Override
-    public void doSetDeviceVariable(String deviceId, String name, Object value) {
-        updateRequests.add(new VariableUpdateRequest(deviceId, name, value));
+    public void doSetDeviceVariable(DeviceContext ctx, String name, Object value) {
+        updateRequests.add(new VariableUpdateRequest(ctx, name, value));
     }
 
     @Override
-    public ColorTouchThermostat getThermostatDevice(String deviceId) {
+    public ColorTouchThermostat getThermostatDevice(DeviceContext context) {
         return null;
     }
 
@@ -120,12 +121,12 @@ public class MockStateContext implements StateContext {
     }
 
     public class VariableUpdateRequest {
-        public String deviceId;
+        public DeviceContext deviceContext;
         public String name;
         public Object value;
 
-        public VariableUpdateRequest(String deviceId, String name, Object value) {
-            this.deviceId = deviceId;
+        public VariableUpdateRequest(DeviceContext deviceContext, String name, Object value) {
+            this.deviceContext = deviceContext;
             this.name = name;
             this.value = value;
         }

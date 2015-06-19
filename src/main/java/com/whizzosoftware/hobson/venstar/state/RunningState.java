@@ -7,9 +7,8 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar.state;
 
+import com.whizzosoftware.hobson.api.device.DeviceContext;
 import com.whizzosoftware.hobson.venstar.api.dto.*;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
 /**
  * Represents the "normal" running state of the plugin.
@@ -28,8 +27,8 @@ public class RunningState implements State {
     }
 
     @Override
-    public void onSetDeviceVariable(StateContext context, String deviceId, String name, Object value) {
-        context.doSetDeviceVariable(deviceId, name, value);
+    public void onSetDeviceVariable(StateContext context, DeviceContext deviceContext, String name, Object value) {
+        context.doSetDeviceVariable(deviceContext, name, value);
     }
 
     @Override
@@ -39,15 +38,15 @@ public class RunningState implements State {
 
     @Override
     public void onInfoResponse(StateContext context, InfoRequest request, InfoResponse response, Throwable error) {
-        if (request.getDeviceId() != null) {
-            context.getThermostatDevice(request.getDeviceId()).onInfoResponse(request, response, error, System.currentTimeMillis());
+        if (request.getDeviceContext() != null) {
+            context.getThermostatDevice(request.getDeviceContext()).onInfoResponse(request, response, error, System.currentTimeMillis());
         }
     }
 
     @Override
     public void onControlResponse(StateContext context, ControlRequest request, ControlResponse response, Throwable error) {
-        if (request.getDeviceId() != null) {
-            context.getThermostatDevice(request.getDeviceId()).onControlResponse(request, response, error);
+        if (request.getDeviceContext() != null) {
+            context.getThermostatDevice(request.getDeviceContext()).onControlResponse(request, response, error);
         }
     }
 }

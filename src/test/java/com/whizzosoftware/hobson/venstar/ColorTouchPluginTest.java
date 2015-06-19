@@ -9,11 +9,9 @@ package com.whizzosoftware.hobson.venstar;
 
 import com.whizzosoftware.hobson.api.device.MockDeviceManager;
 import com.whizzosoftware.hobson.api.disco.MockDiscoManager;
+import com.whizzosoftware.hobson.api.property.PropertyContainer;
 import org.junit.Test;
 import static org.junit.Assert.*;
-
-import java.util.Dictionary;
-import java.util.Hashtable;
 
 public class ColorTouchPluginTest {
     @Test
@@ -26,8 +24,8 @@ public class ColorTouchPluginTest {
         assertEquals(0, plugin.getDiscoveredURIs().size());
 
         // start with manually configured thermostat host
-        Dictionary config = new Hashtable();
-        config.put(ColorTouchPlugin.PROP_THERMOSTAT_HOST, "192.168.0.10");
+        PropertyContainer config = new PropertyContainer();
+        config.setPropertyValue(ColorTouchPlugin.PROP_THERMOSTAT_HOST, "192.168.0.10");
         plugin.onStartup(config);
         assertEquals(1, plugin.getDiscoveredURIs().size());
 

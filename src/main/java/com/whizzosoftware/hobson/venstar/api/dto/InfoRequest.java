@@ -1,21 +1,23 @@
 package com.whizzosoftware.hobson.venstar.api.dto;
 
+import com.whizzosoftware.hobson.api.device.DeviceContext;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 
 public class InfoRequest {
     private URI baseURI;
     private URI uri;
-    private String deviceId;
+    private DeviceContext deviceContext;
 
     public InfoRequest(URI baseURI) throws URISyntaxException {
         this(baseURI, null);
     }
 
-    public InfoRequest(URI baseURI, String deviceId) throws URISyntaxException {
+    public InfoRequest(URI baseURI, DeviceContext deviceContext) throws URISyntaxException {
         this.baseURI = baseURI;
         this.uri = new URI(baseURI.getScheme(), baseURI.getHost(), "/query/info", null);
-        this.deviceId = deviceId;
+        this.deviceContext = deviceContext;
     }
 
     public URI getBaseURI() {
@@ -26,11 +28,11 @@ public class InfoRequest {
         return uri;
     }
 
-    public String getDeviceId() {
-        return deviceId;
+    public DeviceContext getDeviceContext() {
+        return deviceContext;
     }
 
     public boolean hasDeviceId() {
-        return (deviceId != null);
+        return (deviceContext != null);
     }
 }

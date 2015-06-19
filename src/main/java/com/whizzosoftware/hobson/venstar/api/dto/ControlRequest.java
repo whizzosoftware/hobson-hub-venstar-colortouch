@@ -8,6 +8,7 @@
 package com.whizzosoftware.hobson.venstar.api.dto;
 
 import com.whizzosoftware.hobson.api.HobsonRuntimeException;
+import com.whizzosoftware.hobson.api.device.DeviceContext;
 import com.whizzosoftware.hobson.api.plugin.http.URLEncoderUtil;
 
 import java.io.UnsupportedEncodingException;
@@ -24,54 +25,30 @@ import java.util.Map;
 public class ControlRequest {
     private URI baseURI;
     private URI uri;
-    private String deviceId;
+    private DeviceContext deviceContext;
     private Integer mode;
     private Integer fan;
     private Double heatTemp;
     private Double coolTemp;
     private Integer pin;
 
-    static public ControlRequest create(URI baseURI, String deviceId, String mode, String fan, Double heatTemp, Double coolTemp, Double setPointDelta, Double targetTemp, Integer pin) {
-        ThermostatMode tmode = (mode != null) ? ThermostatMode.valueOf(mode) : null;
-        Double heat = heatTemp;
-        Double cool = coolTemp;
-
-        if (tmode != null) {
-            switch (tmode) {
-                case COOL:
-                    cool = targetTemp;
-                    break;
-
-                case HEAT:
-                    heat = targetTemp;
-                    break;
-
-                case AUTO:
-                    heat = targetTemp - setPointDelta / 2;
-                    cool = targetTemp + setPointDelta / 2;
-            }
-        }
-
-        return new ControlRequest(baseURI, deviceId, mode, fan, heat, cool, setPointDelta, pin);
+    public ControlRequest(URI baseURI, DeviceContext deviceContext, String mode, String fan, Double heatTemp, Double coolTemp, Double setPointDelta, Integer pin) {
+        this(baseURI, deviceContext, (mode != null) ? ThermostatMode.valueOf(mode) : null, (fan != null) ? FanMode.valueOf(fan) : null, heatTemp, coolTemp, setPointDelta, pin);
     }
 
-    public ControlRequest(URI baseURI, String deviceId, String mode, String fan, Double heatTemp, Double coolTemp, Double setPointDelta, Integer pin) {
-        this(baseURI, deviceId, (mode != null) ? ThermostatMode.valueOf(mode) : null, (fan != null) ? FanMode.valueOf(fan) : null, heatTemp, coolTemp, setPointDelta, pin);
-    }
-
-    public ControlRequest(URI baseURI, String deviceId, ThermostatMode mode, FanMode fan, Double heatTemp, Double coolTemp, Double setPointDelta, Integer pin) {
+    public ControlRequest(URI baseURI, DeviceContext deviceContext, ThermostatMode mode, FanMode fan, Double heatTemp, Double coolTemp, Double setPointDelta, Integer pin) {
         try {
             // according to the documentation, when the thermostat mode is "AUTO", cooltemp has to be higher than
             // heattemp and they have to be setpointdelta units apart.
             if (mode == ThermostatMode.AUTO) {
-                if (coolTemp - heatTemp < setPointDelta) {
+                if (Math.abs(coolTemp - heatTemp) < setPointDelta) {
                     throw new HobsonRuntimeException("cooltemp must be " + setPointDelta + " units higher than heattemp when thermostat mode is AUTO");
                 }
             }
 
             this.baseURI = baseURI;
             this.uri = new URI(baseURI.getScheme(), baseURI.getHost(), "/control", null);
-            this.deviceId = deviceId;
+            this.deviceContext = deviceContext;
             if (mode != null) {
                 this.mode = mode.ordinal();
             }
@@ -94,8 +71,8 @@ public class ControlRequest {
         return uri;
     }
 
-    public String getDeviceId() {
-        return deviceId;
+    public DeviceContext getDeviceContext() {
+        return deviceContext;
     }
 
     public Integer getMode() {
@@ -157,6 +134,6 @@ public class ControlRequest {
     }
 
     public String getRequestBody() throws UnsupportedEncodingException {
-        return URLEncoderUtil.format(getRequestBodyMap(), null);
+        return URLEncoderUtil.createQueryString(getRequestBodyMap(), null);
     }
 }

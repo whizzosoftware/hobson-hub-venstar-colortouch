@@ -40,16 +40,12 @@ public class VariableStateTest {
         state.setValue(VariableConstants.TEMP_F, 72.0);
         assertEquals(72.0, state.getTempF(), 0);
 
-        assertNull(state.getTargetTempF());
-        state.setValue(VariableConstants.TARGET_TEMP_F, 73.0);
-        assertEquals(73.0, state.getTargetTempF(), 0);
-
         assertNull(state.getCoolTempF());
-        state.setValue(VariableState.TARGET_COOL_TEMP_F, 74.0);
+        state.setValue(VariableConstants.TARGET_COOL_TEMP_F, 74.0);
         assertEquals(74.0, state.getCoolTempF(), 0);
 
         assertNull(state.getHeatTempF());
-        state.setValue(VariableState.TARGET_HEAT_TEMP_F, 71.0);
+        state.setValue(VariableConstants.TARGET_HEAT_TEMP_F, 71.0);
         assertEquals(71.0, state.getHeatTempF(), 0);
     }
 
@@ -63,24 +59,23 @@ public class VariableStateTest {
         assertNull(state.getTempF());
         assertNull(state.getCoolTempF());
         assertNull(state.getHeatTempF());
-        assertNull(state.getTargetTempF());
-        assertTrue(state.equals(new VariableState(null, null, null, null, null, null)));
+        assertTrue(state.equals(new VariableState(null, null, null, null, null)));
 
         // one fully null state should be equal to a state with full values
-        assertTrue(state.equals(new VariableState("AUTO", "AUTO", 70.0, 71.0, 72.0, 73.0)));
+        assertTrue(state.equals(new VariableState("AUTO", "AUTO", 70.0, 71.0, 72.0)));
 
         // a state with only one populated value should be equal to a state with all values populated containing the same one value
         state.setMode("COOL");
-        assertTrue(state.equals(new VariableState("COOL", "AUTO", 70.0, 71.0, 72.0, 73.0)));
+        assertTrue(state.equals(new VariableState("COOL", "AUTO", 70.0, 71.0, 72.0)));
 
         // a state with only one populated value should not be equal to a state with all values populated and containing a different one value
-        assertFalse(state.equals(new VariableState("AUTO", "AUTO", 70.0, 71.0, 72.0, 73.0)));
-        assertFalse(new VariableState(null, null, null, null, null, 72.0).equals(new VariableState(null, null, null, null, null, 73.0)));
+        assertFalse(state.equals(new VariableState("AUTO", "AUTO", 70.0, 71.0, 72.0)));
+        assertFalse(new VariableState(null, null, null, null, 72.0).equals(new VariableState(null, null, null, null, 73.0)));
 
         // a state with all populated values should be equal to a state with the same populated values
-        assertTrue(new VariableState("AUTO", "AUTO", 70.0, 71.0, 72.0, 73.0).equals(new VariableState("AUTO", "AUTO", 70.0, 71.0, 72.0, 73.0)));
+        assertTrue(new VariableState("AUTO", "AUTO", 70.0, 71.0, 72.0).equals(new VariableState("AUTO", "AUTO", 70.0, 71.0, 72.0)));
 
         // a state with all populated values should not be equal to a state with different populated values
-        assertFalse(new VariableState("COOL", "ON", 71.0, 72.0, 73.0, 74.0).equals(new VariableState("AUTO", "AUTO", 70.0, 71.0, 72.0, 73.0)));
+        assertFalse(new VariableState("COOL", "ON", 71.0, 72.0, 73.0).equals(new VariableState("AUTO", "AUTO", 70.0, 71.0, 72.0)));
     }
 }

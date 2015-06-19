@@ -7,6 +7,7 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar.state;
 
+import com.whizzosoftware.hobson.api.device.DeviceContext;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -36,11 +37,13 @@ public class RunningStateTest {
         assertNull(context.getState());
         assertEquals(0, context.getUpdateRequests().size());
 
-        state.onSetDeviceVariable(context, "device", "foo", "bar");
+        DeviceContext ctx = DeviceContext.createLocal("plugin", "device");
+
+        state.onSetDeviceVariable(context, ctx, "foo", "bar");
         assertNull(context.getState());
         assertEquals(1, context.getUpdateRequests().size());
         MockStateContext.VariableUpdateRequest e = context.getUpdateRequests().iterator().next();
-        assertEquals("device", e.deviceId);
+        assertEquals("device", e.deviceContext.getDeviceId());
         assertEquals("foo", e.name);
         assertEquals("bar", e.value);
     }

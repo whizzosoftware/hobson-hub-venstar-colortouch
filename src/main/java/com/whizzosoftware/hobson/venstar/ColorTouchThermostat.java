@@ -10,6 +10,8 @@ package com.whizzosoftware.hobson.venstar;
 import com.whizzosoftware.hobson.api.device.AbstractHobsonDevice;
 import com.whizzosoftware.hobson.api.device.DeviceType;
 import com.whizzosoftware.hobson.api.plugin.HobsonPlugin;
+import com.whizzosoftware.hobson.api.property.PropertyContainer;
+import com.whizzosoftware.hobson.api.property.TypedProperty;
 import com.whizzosoftware.hobson.api.variable.HobsonVariable;
 import com.whizzosoftware.hobson.api.variable.VariableConstants;
 import com.whizzosoftware.hobson.api.variable.VariableUpdate;
@@ -20,8 +22,6 @@ import com.whizzosoftware.hobson.venstar.state.VariableState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -69,23 +69,23 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
             this.defaultName = info.getName();
             // set the current state to the InfoResponse argument
             this.currentState.update(
-                    info.getMode().toString(),
-                    info.getFanMode().toString(),
-                    info.getSpaceTemp(),
-                    info.getCoolTemp(),
-                    info.getHeatTemp(),
-                    calculateTargetTemp(info.getMode().toString(), info.getCoolTemp(), info.getHeatTemp())
+                info.getMode().toString(),
+                info.getFanMode().toString(),
+                info.getSpaceTemp(),
+                info.getCoolTemp(),
+                info.getHeatTemp()
             );
         }
     }
 
     @Override
-    public void onStartup() {
+    public void onStartup(PropertyContainer config) {
         // publish necessary variables
         publishVariable(VariableConstants.TEMP_F, currentState.getTempF(), HobsonVariable.Mask.READ_ONLY);
         publishVariable(VariableConstants.TSTAT_MODE, currentState.getMode(), HobsonVariable.Mask.READ_WRITE);
-        publishVariable(VariableConstants.TARGET_TEMP_F, currentState.getTargetTempF(), HobsonVariable.Mask.READ_WRITE);
         publishVariable(VariableConstants.TSTAT_FAN_MODE, currentState.getFanMode(), HobsonVariable.Mask.READ_WRITE);
+        publishVariable(VariableConstants.TARGET_COOL_TEMP_F, currentState.getCoolTempF(), HobsonVariable.Mask.READ_WRITE);
+        publishVariable(VariableConstants.TARGET_HEAT_TEMP_F, currentState.getHeatTempF(), HobsonVariable.Mask.READ_WRITE);
     }
 
     @Override
@@ -108,6 +108,11 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
     }
 
     @Override
+    protected TypedProperty[] createSupportedProperties() {
+        return null;
+    }
+
+    @Override
     public DeviceType getType() {
         return DeviceType.THERMOSTAT;
     }
@@ -123,11 +128,11 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
 
             // if we're not already waiting on an info response, send a new info request
             if (pendingInfoRequestTime == null) {
-                channel.sendInfoRequest(new InfoRequest(getBaseURI(), getId()));
+                channel.sendInfoRequest(new InfoRequest(getBaseURI(), getContext()));
                 pendingInfoRequestTime = System.currentTimeMillis();
             }
         } catch (URISyntaxException e) {
-            logger.error("Error refreshing thermostat: " + getId(), e);
+            logger.error("Error refreshing thermostat: " + getContext(), e);
         }
     }
 
@@ -156,11 +161,11 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
         if (now - lastRefresh >= checkInterval && (pendingInfoRequestTime == null || now - pendingInfoRequestTime >= DEFAULT_INFO_RESPONSE_TIMEOUT)) {
             // send a new info request to the thermostat
             try {
-                channel.sendInfoRequest(new InfoRequest(getBaseURI(), getId()));
+                channel.sendInfoRequest(new InfoRequest(getBaseURI(), getContext()));
                 pendingInfoRequestTime = System.currentTimeMillis();
                 lastRefresh = now;
             } catch (URISyntaxException e) {
-                logger.error("Error refreshing thermostat: " + getId(), e);
+                logger.error("Error refreshing thermostat: " + getContext(), e);
             }
         }
     }
@@ -190,22 +195,20 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
                 response.getFanMode().toString(),
                 response.getSpaceTemp(),
                 response.getCoolTemp(),
-                response.getHeatTemp(),
-                calculateTargetTemp(response.getMode().toString(), response.getCoolTemp(), response.getHeatTemp())
+                response.getHeatTemp()
             );
 
             // if the response state is not equal to the pending confirmation state, send a control request
             if (!responseState.equals(pendingConfirmation.getState())) {
                 if (!pendingConfirmation.wasControlRequestSent()) {
-                    channel.sendControlRequest(ControlRequest.create(
+                    channel.sendControlRequest(new ControlRequest(
                         uri,
-                        getId(),
+                        getContext(),
                         pendingConfirmation.getState().hasMode() ? pendingConfirmation.getState().getMode() : responseState.getMode(),
                         pendingConfirmation.getState().hasFanMode() ? pendingConfirmation.getState().getFanMode() : responseState.getFanMode(),
                         pendingConfirmation.getState().hasHeatTempF() ? pendingConfirmation.getState().getHeatTempF() : responseState.getHeatTempF(),
                         pendingConfirmation.getState().hasCoolTempF() ? pendingConfirmation.getState().getCoolTempF() : responseState.getCoolTempF(),
                         response.getSetPointDelta(),
-                        pendingConfirmation.getState().hasTargetTempF() ? pendingConfirmation.getState().getTargetTempF() : responseState.getTargetTempF(),
                         null)
                     );
                     pendingConfirmation.flagControlRequestSent(now);
@@ -217,16 +220,19 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
             // build a list of variable updates based on any changes differences between current and response state
             List<VariableUpdate> updates = new ArrayList<>();
             if (!currentState.hasMode() || !currentState.getMode().equals(responseState.getMode())) {
-                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TSTAT_MODE, responseState.getMode()));
+                updates.add(new VariableUpdate(getContext(), VariableConstants.TSTAT_MODE, responseState.getMode()));
             }
             if (!currentState.hasFanMode() || !currentState.getFanMode().equals(responseState.getFanMode())) {
-                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TSTAT_FAN_MODE, responseState.getFanMode()));
+                updates.add(new VariableUpdate(getContext(), VariableConstants.TSTAT_FAN_MODE, responseState.getFanMode()));
             }
             if (!currentState.hasTempF() || !currentState.getTempF().equals(responseState.getTempF())) {
-                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TEMP_F, responseState.getTempF()));
+                updates.add(new VariableUpdate(getContext(), VariableConstants.TEMP_F, responseState.getTempF()));
             }
-            if (!currentState.hasTargetTempF() || !currentState.getTargetTempF().equals(responseState.getTargetTempF())) {
-                updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TARGET_TEMP_F, responseState.getTargetTempF()));
+            if (!currentState.hasCoolTempF() || !currentState.getCoolTempF().equals(responseState.getCoolTempF())) {
+                updates.add(new VariableUpdate(getContext(), VariableConstants.TARGET_COOL_TEMP_F, responseState.getCoolTempF()));
+            }
+            if (!currentState.hasHeatTempF() || !currentState.getHeatTempF().equals(responseState.getHeatTempF())) {
+                updates.add(new VariableUpdate(getContext(), VariableConstants.TARGET_HEAT_TEMP_F, responseState.getHeatTempF()));
             }
 
             // fire variable update notifications if necessary
@@ -240,22 +246,21 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
                 responseState.getFanMode(),
                 responseState.getTempF(),
                 responseState.getCoolTempF(),
-                responseState.getHeatTempF(),
-                responseState.getTargetTempF()
+                responseState.getHeatTempF()
             );
         // if it's an error, clear the current state
         } else if (error != null) {
-            logger.error("Error retrieving state info for device " + getId() + " at " + request.getURI(), error);
+            logger.error("Error retrieving state info for device " + getContext() + " at " + request.getURI(), error);
 
             // reset the last recorded values to force an update when new values are received
             currentState.clear();
 
             // post a null variable update to indicate we no longer know the current values
             List<VariableUpdate> updates = new ArrayList<>();
-            updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TSTAT_MODE, null));
-            updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TSTAT_FAN_MODE, null));
-            updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TEMP_F, null));
-            updates.add(new VariableUpdate(getPluginId(), getId(), VariableConstants.TARGET_TEMP_F, null));
+            updates.add(new VariableUpdate(getContext(), VariableConstants.TSTAT_MODE, null));
+            updates.add(new VariableUpdate(getContext(), VariableConstants.TSTAT_FAN_MODE, null));
+            updates.add(new VariableUpdate(getContext(), VariableConstants.TEMP_F, null));
+            updates.add(new VariableUpdate(getContext(), VariableConstants.TARGET_TEMP_F, null));
             fireVariableUpdateNotifications(updates);
         }
     }
@@ -273,31 +278,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
         if (response != null) {
             logger.trace("Received successful control response");
         } else if (error != null) {
-            logger.error("Error sending control request for device " + getId(), error);
+            logger.error("Error sending control request for device " + getContext(), error);
         }
-    }
-
-    protected Double calculateTargetTemp(String mode, Double coolTempF, Double heatTempF) {
-        Double temp = null;
-        if (mode != null) {
-            if (mode.equals(ThermostatMode.COOL.toString())) {
-                temp = coolTempF;
-            } else if (mode.equals(ThermostatMode.HEAT.toString())) {
-                temp = heatTempF;
-            } else if (mode.equals(ThermostatMode.AUTO.toString())) {
-                return round(heatTempF + ((coolTempF - heatTempF) / 2.0), 0);
-            } else if (mode.equals(ThermostatMode.OFF.toString())) {
-                temp = null;
-            }
-        }
-        return temp;
-    }
-
-    public double round(double value, int places) {
-        if (places < 0) throw new IllegalArgumentException();
-
-        BigDecimal bd = new BigDecimal(value);
-        bd = bd.setScale(places, RoundingMode.HALF_UP);
-        return bd.doubleValue();
     }
 }

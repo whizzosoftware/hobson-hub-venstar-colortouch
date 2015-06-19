@@ -7,6 +7,7 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar.state;
 
+import com.whizzosoftware.hobson.api.device.DeviceContext;
 import com.whizzosoftware.hobson.venstar.ColorTouchThermostat;
 import com.whizzosoftware.hobson.venstar.api.ColorTouchChannel;
 import com.whizzosoftware.hobson.venstar.api.dto.InfoResponse;
@@ -26,6 +27,6 @@ public interface StateContext extends ColorTouchChannel {
     public boolean hasThermostatWithHost(String host);
     public void addThermostat(URI baseURI, InfoResponse info);
     public void refreshAllThermostats(long now);
-    public void doSetDeviceVariable(String deviceId, String name, Object value);
-    public ColorTouchThermostat getThermostatDevice(String deviceId);
+    public void doSetDeviceVariable(DeviceContext ctx, String name, Object value);
+    public ColorTouchThermostat getThermostatDevice(DeviceContext ctx);
 }

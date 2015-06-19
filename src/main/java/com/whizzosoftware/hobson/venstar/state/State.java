@@ -7,6 +7,7 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar.state;
 
+import com.whizzosoftware.hobson.api.device.DeviceContext;
 import com.whizzosoftware.hobson.venstar.api.dto.*;
 
 /**
@@ -32,13 +33,12 @@ public interface State {
 
     /**
      * Callback when a request to set a device variable is received.
-     *
-     * @param context the current state context
-     * @param deviceId the ID of the device for which the request was made
+     *  @param context the current state context
+     * @param deviceContext the ID of the device for which the request was made
      * @param name the variable name
      * @param value the variable value
      */
-    public void onSetDeviceVariable(StateContext context, String deviceId, String name, Object value);
+    public void onSetDeviceVariable(StateContext context, DeviceContext deviceContext, String name, Object value);
 
     /**
      * Called when a "root response" is received from a thermostat.

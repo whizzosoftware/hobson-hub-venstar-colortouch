@@ -7,6 +7,7 @@
  *******************************************************************************/
 package com.whizzosoftware.hobson.venstar.state;
 
+import com.whizzosoftware.hobson.api.device.DeviceContext;
 import com.whizzosoftware.hobson.venstar.api.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +63,7 @@ public class DiscoveryState implements State {
     }
 
     @Override
-    public void onSetDeviceVariable(StateContext context, String deviceId, String name, Object value) {
+    public void onSetDeviceVariable(StateContext context, DeviceContext deviceContext, String name, Object value) {
         logger.debug("Received set device variable request while in discovery state; ignoring");
     }
 
@@ -104,13 +105,13 @@ public class DiscoveryState implements State {
         if (response != null) {
             if (!context.hasThermostatWithHost(request.getURI().getHost())) {
                 context.addThermostat(request.getURI(), response);
-            } else if (request.getDeviceId() != null) {
-                context.getThermostatDevice(request.getDeviceId()).onInfoResponse(request, response, error, System.currentTimeMillis());
+            } else if (request.getDeviceContext() != null) {
+                context.getThermostatDevice(request.getDeviceContext()).onInfoResponse(request, response, error, System.currentTimeMillis());
             }
         } else if (error != null) {
             logger.error("Error requesting info from host " + request.getURI(), error);
-            if (request.getDeviceId() != null) {
-                context.getThermostatDevice(request.getDeviceId()).onInfoResponse(request, null, error, System.currentTimeMillis());
+            if (request.getDeviceContext() != null) {
+                context.getThermostatDevice(request.getDeviceContext()).onInfoResponse(request, null, error, System.currentTimeMillis());
             }
         }
 
@@ -119,8 +120,8 @@ public class DiscoveryState implements State {
 
     @Override
     public void onControlResponse(StateContext context, ControlRequest request, ControlResponse response, Throwable error) {
-        if (request.getDeviceId() != null) {
-            context.getThermostatDevice(request.getDeviceId()).onControlResponse(request, response, error);
+        if (request.getDeviceContext() != null) {
+            context.getThermostatDevice(request.getDeviceContext()).onControlResponse(request, response, error);
         }
     }
 

@@ -15,29 +15,24 @@ import com.whizzosoftware.hobson.api.variable.VariableConstants;
  * @author Dan Noguerol
  */
 public class VariableState {
-    public static final String TARGET_COOL_TEMP_F = "targetCoolTempF";
-    public static final String TARGET_HEAT_TEMP_F = "targetHeatTempF";
-
     private String mode;
     private String fanMode;
     private Double tempF;
     private Double coolTempF;
     private Double heatTempF;
-    private Double targetTempF;
 
     public VariableState() {}
 
-    public VariableState(String mode, String fanMode, Double tempF, Double coolTempF, Double heatTempF, Double targetTempF) {
-        update(mode, fanMode, tempF, coolTempF, heatTempF, targetTempF);
+    public VariableState(String mode, String fanMode, Double tempF, Double coolTempF, Double heatTempF) {
+        update(mode, fanMode, tempF, coolTempF, heatTempF);
     }
 
-    public void update(String mode, String fanMode, Double tempF, Double coolTempF, Double heatTempF, Double targetTempF) {
+    public void update(String mode, String fanMode, Double tempF, Double coolTempF, Double heatTempF) {
         this.mode = mode;
         this.fanMode = fanMode;
         this.tempF = tempF;
         this.coolTempF = coolTempF;
         this.heatTempF = heatTempF;
-        this.targetTempF = targetTempF;
     }
 
     public void clear() {
@@ -46,7 +41,6 @@ public class VariableState {
         this.tempF = null;
         this.coolTempF = null;
         this.heatTempF = null;
-        this.targetTempF = null;
     }
 
     public boolean hasMode() {
@@ -109,18 +103,6 @@ public class VariableState {
         this.heatTempF = heatTempF;
     }
 
-    public boolean hasTargetTempF() {
-        return (targetTempF != null);
-    }
-
-    public Double getTargetTempF() {
-        return targetTempF;
-    }
-
-    public void setTargetTempF(Double targetTempF) {
-        this.targetTempF = targetTempF;
-    }
-
     /**
      * Set a variable value based on variable name.
      *
@@ -134,11 +116,9 @@ public class VariableState {
             this.fanMode = value.toString();
         } else if (VariableConstants.TEMP_F.equals(name)) {
             this.tempF = (Double)value;
-        } else if (VariableConstants.TARGET_TEMP_F.equals(name)) {
-            this.targetTempF = getDouble(value);
-        } else if (TARGET_COOL_TEMP_F.equals(name)) {
+        } else if (VariableConstants.TARGET_COOL_TEMP_F.equals(name)) {
             this.coolTempF = getDouble(value);
-        } else if (TARGET_HEAT_TEMP_F.equals(name)) {
+        } else if (VariableConstants.TARGET_HEAT_TEMP_F.equals(name)) {
             this.heatTempF = getDouble(value);
         }
     }
@@ -149,7 +129,7 @@ public class VariableState {
      * @return a boolean
      */
     public boolean hasValues() {
-        return (getMode() != null || getFanMode() != null || getTempF() != null || getTargetTempF() != null || getCoolTempF() != null || getHeatTempF() != null);
+        return (getMode() != null || getFanMode() != null || getTempF() != null || getCoolTempF() != null || getHeatTempF() != null);
     }
 
     /**
@@ -164,8 +144,7 @@ public class VariableState {
             (getMode() == null || state.getMode() == null || getMode().equals(state.getMode())) &&
             (getFanMode() == null || state.getFanMode() == null || getFanMode().equals(state.getFanMode())) &&
             (getCoolTempF() == null || state.getCoolTempF() == null || getCoolTempF().equals(state.getCoolTempF())) &&
-            (getHeatTempF() == null || state.getHeatTempF() == null || getHeatTempF().equals(state.getHeatTempF())) &&
-            (getTargetTempF() == null || state.getTargetTempF() == null || getTargetTempF().equals(state.getTargetTempF()))
+            (getHeatTempF() == null || state.getHeatTempF() == null || getHeatTempF().equals(state.getHeatTempF()))
         );
     }
 

@@ -8,9 +8,7 @@
 package com.whizzosoftware.hobson.venstar;
 
 import com.whizzosoftware.hobson.api.device.MockDeviceManager;
-import com.whizzosoftware.hobson.api.device.MockDevicePublisher;
 import com.whizzosoftware.hobson.api.disco.MockDiscoManager;
-import com.whizzosoftware.hobson.api.util.UserUtil;
 import com.whizzosoftware.hobson.api.variable.*;
 import com.whizzosoftware.hobson.venstar.api.MockColorTouchChannel;
 import com.whizzosoftware.hobson.venstar.api.dto.*;
@@ -26,8 +24,9 @@ public class ColorTouchThermostatTest {
     @Test
     public void testConstructor() throws Exception {
         InfoResponse info = new InfoResponse("thermo", ThermostatMode.AUTO, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
-        ColorTouchThermostat t = new ColorTouchThermostat(null, null, new URI("http://192.168.0.129"), info);
-        assertEquals("192-168-0-129", t.getId());
+        ColorTouchPlugin plugin = new ColorTouchPlugin("plugin");
+        ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
+        assertEquals("192-168-0-129", t.getContext().getDeviceId());
         assertEquals("thermo", t.getDefaultName());
         assertEquals("AUTO", t.getCurrentState().getMode());
         assertEquals("ON", t.getCurrentState().getFanMode());
@@ -43,13 +42,14 @@ public class ColorTouchThermostatTest {
         plugin.setVariableManager(vm);
         InfoResponse info = new InfoResponse("name", ThermostatMode.HEAT, FanMode.AUTO, 0, 71.0, 75.0, 70.0, 2.0);
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
-        t.onStartup();
-        Collection<HobsonVariable> vars = vm.getDeviceVariables(UserUtil.DEFAULT_USER, UserUtil.DEFAULT_HUB, "id", t.getId());
-        assertEquals(4, vars.size());
+        t.onStartup(null);
+        Collection<HobsonVariable> vars = vm.getDeviceVariables(t.getContext()).getCollection();
+        assertEquals(5, vars.size());
         for (HobsonVariable v : vars) {
             assertTrue(
                 (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(71.0)) ||
-                (VariableConstants.TARGET_TEMP_F.equals(v.getName()) && v.getValue().equals(70.0)) ||
+                (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(75.0)) ||
+                (VariableConstants.TARGET_HEAT_TEMP_F.equals(v.getName()) && v.getValue().equals(70.0)) ||
                 (VariableConstants.TSTAT_FAN_MODE.equals(v.getName()) && v.getValue().equals("AUTO")) ||
                 (VariableConstants.TSTAT_MODE.equals(v.getName()) && v.getValue().equals("HEAT"))
             );
@@ -63,13 +63,14 @@ public class ColorTouchThermostatTest {
         plugin.setVariableManager(vm);
         InfoResponse info = new InfoResponse("name", ThermostatMode.COOL, FanMode.AUTO, 0, 74.0, 75.0, 70.0, 2.0);
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
-        t.onStartup();
-        Collection<HobsonVariable> vars = vm.getDeviceVariables(UserUtil.DEFAULT_USER, UserUtil.DEFAULT_HUB, "id", t.getId());
-        assertEquals(4, vars.size());
+        t.onStartup(null);
+        Collection<HobsonVariable> vars = vm.getDeviceVariables(t.getContext()).getCollection();
+        assertEquals(5, vars.size());
         for (HobsonVariable v : vars) {
             assertTrue(
                 (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(74.0)) ||
-                (VariableConstants.TARGET_TEMP_F.equals(v.getName()) && v.getValue().equals(75.0)) ||
+                (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(75.0)) ||
+                (VariableConstants.TARGET_HEAT_TEMP_F.equals(v.getName()) && v.getValue().equals(70.0)) ||
                 (VariableConstants.TSTAT_FAN_MODE.equals(v.getName()) && v.getValue().equals("AUTO")) ||
                 (VariableConstants.TSTAT_MODE.equals(v.getName()) && v.getValue().equals("COOL"))
             );
@@ -77,79 +78,20 @@ public class ColorTouchThermostatTest {
     }
 
     @Test
-    public void testOnStartupVariablesInAutoModeWithCoolpointLower() throws Exception {
+    public void testOnStartupVariablesInAutoMode() throws Exception {
         ColorTouchPlugin plugin = new ColorTouchPlugin("id");
         MockVariableManager vm = new MockVariableManager();
         plugin.setVariableManager(vm);
         InfoResponse info = new InfoResponse("name", ThermostatMode.AUTO, FanMode.AUTO, 0, 71.0, 70.0, 68.0, 2.0);
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
-        t.onStartup();
-        Collection<HobsonVariable> vars = vm.getDeviceVariables(UserUtil.DEFAULT_USER, UserUtil.DEFAULT_HUB, "id", t.getId());
-        assertEquals(4, vars.size());
+        t.onStartup(null);
+        Collection<HobsonVariable> vars = vm.getDeviceVariables(t.getContext()).getCollection();
+        assertEquals(5, vars.size());
         for (HobsonVariable v : vars) {
             assertTrue(
                 (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(71.0)) ||
-                (VariableConstants.TARGET_TEMP_F.equals(v.getName()) && v.getValue().equals(69.0)) ||
-                (VariableConstants.TSTAT_FAN_MODE.equals(v.getName()) && v.getValue().equals("AUTO")) ||
-                (VariableConstants.TSTAT_MODE.equals(v.getName()) && v.getValue().equals("AUTO"))
-            );
-        }
-    }
-
-    @Test
-    public void testOnStartupVariablesInAutoModeWithCoolpointHigher() throws Exception {
-        ColorTouchPlugin plugin = new ColorTouchPlugin("id");
-        MockVariableManager vm = new MockVariableManager();
-        plugin.setVariableManager(vm);
-        InfoResponse info = new InfoResponse("name", ThermostatMode.AUTO, FanMode.AUTO, 0, 71.0, 73.0, 72.0, 2.0);
-        ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
-        t.onStartup();
-        Collection<HobsonVariable> vars = vm.getDeviceVariables(UserUtil.DEFAULT_USER, UserUtil.DEFAULT_HUB, "id", t.getId());
-        assertEquals(4, vars.size());
-        for (HobsonVariable v : vars) {
-            assertTrue(
-                (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(71.0)) ||
-                (VariableConstants.TARGET_TEMP_F.equals(v.getName()) && v.getValue().equals(73.0)) ||
-                (VariableConstants.TSTAT_FAN_MODE.equals(v.getName()) && v.getValue().equals("AUTO")) ||
-                (VariableConstants.TSTAT_MODE.equals(v.getName()) && v.getValue().equals("AUTO"))
-            );
-        }
-    }
-
-    @Test
-    public void testOnStartupVariablesInAutoModeWithCoolpointEqual() throws Exception {
-        ColorTouchPlugin plugin = new ColorTouchPlugin("id");
-        MockVariableManager vm = new MockVariableManager();
-        plugin.setVariableManager(vm);
-        InfoResponse info = new InfoResponse("name", ThermostatMode.AUTO, FanMode.AUTO, 0, 71.0, 71.0, 69.0, 2.0);
-        ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
-        t.onStartup();
-        Collection<HobsonVariable> vars = vm.getDeviceVariables(UserUtil.DEFAULT_USER, UserUtil.DEFAULT_HUB, "id", t.getId());
-        assertEquals(4, vars.size());
-        for (HobsonVariable v : vars) {
-            assertTrue(
-                (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(71.0)) ||
-                (VariableConstants.TARGET_TEMP_F.equals(v.getName()) && v.getValue().equals(70.0)) ||
-                (VariableConstants.TSTAT_FAN_MODE.equals(v.getName()) && v.getValue().equals("AUTO")) ||
-                (VariableConstants.TSTAT_MODE.equals(v.getName()) && v.getValue().equals("AUTO"))
-            );
-        }
-    }
-
-    @Test
-    public void testOnStartupVariablesInAutoModeWithHeatpointEqual() throws Exception {
-        ColorTouchPlugin plugin = new ColorTouchPlugin("id");
-        MockVariableManager vm = new MockVariableManager();
-        plugin.setVariableManager(vm);
-        InfoResponse info = new InfoResponse("name", ThermostatMode.AUTO, FanMode.AUTO, 0, 71.0, 73.0, 71.0, 2.0);
-        ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
-        t.onStartup();
-        Collection<HobsonVariable> vars = vm.getDeviceVariables(UserUtil.DEFAULT_USER, UserUtil.DEFAULT_HUB, "id", t.getId());
-        assertEquals(4, vars.size());
-        for (HobsonVariable v : vars) {
-            assertTrue(
-                (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(71.0)) ||
-                (VariableConstants.TARGET_TEMP_F.equals(v.getName()) && v.getValue().equals(72.0)) ||
+                (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(70.0)) ||
+                (VariableConstants.TARGET_HEAT_TEMP_F.equals(v.getName()) && v.getValue().equals(68.0)) ||
                 (VariableConstants.TSTAT_FAN_MODE.equals(v.getName()) && v.getValue().equals("AUTO")) ||
                 (VariableConstants.TSTAT_MODE.equals(v.getName()) && v.getValue().equals("AUTO"))
             );
@@ -166,7 +108,7 @@ public class ColorTouchThermostatTest {
         MockColorTouchChannel channel = new MockColorTouchChannel();
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, channel, uri, info);
         assertEquals(0, channel.getControlRequests().size());
-        t.onSetVariable(VariableConstants.TARGET_TEMP_F, 72.0);
+        t.onSetVariable(VariableConstants.TARGET_HEAT_TEMP_F, 72.0);
         assertEquals(0, channel.getControlRequests().size());
         t.onInfoResponse(new InfoRequest(uri), info, null, System.currentTimeMillis());
         assertEquals(1, channel.getControlRequests().size());
@@ -186,7 +128,7 @@ public class ColorTouchThermostatTest {
         plugin.setVariableManager(vm);
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, channel, new URI("http://192.168.0.129"), info);
         assertEquals(0, channel.getControlRequests().size());
-        t.onSetVariable(VariableConstants.TARGET_TEMP_F, 72.0);
+        t.onSetVariable(VariableConstants.TARGET_COOL_TEMP_F, 72.0);
         assertEquals(0, channel.getControlRequests().size());
         t.onInfoResponse(null, info, null, System.currentTimeMillis());
         assertEquals(1, channel.getControlRequests().size());
@@ -198,61 +140,41 @@ public class ColorTouchThermostatTest {
     }
 
     @Test
-    public void testTargetTempFAutoMode() throws Exception {
-        InfoResponse info = new InfoResponse("name", ThermostatMode.AUTO, FanMode.AUTO, 0, 70.0, 74.0, 70.0, 2.0);
-        MockColorTouchChannel channel = new MockColorTouchChannel();
-        MockVariableManager vm = new MockVariableManager();
-        ColorTouchPlugin plugin = new ColorTouchPlugin("pluginId");
-        plugin.setVariableManager(vm);
-        ColorTouchThermostat t = new ColorTouchThermostat(plugin, channel, new URI("http://192.168.0.129"), info);
-        assertEquals(0, channel.getControlRequests().size());
-        t.onSetVariable(VariableConstants.TARGET_TEMP_F, 73.0);
-        assertEquals(0, channel.getControlRequests().size());
-        t.onInfoResponse(null, info, null, System.currentTimeMillis());
-        assertEquals(1, channel.getControlRequests().size());
-        ControlRequest cr = channel.getControlRequests().get(0);
-        assertEquals(ThermostatMode.AUTO.ordinal(), (int)cr.getMode());
-        assertEquals(FanMode.AUTO.ordinal(), (int)cr.getFanMode());
-        assertEquals(74.0, cr.getCoolTemp(), 0); // this should be raised to 74
-        assertEquals(72.0, cr.getHeatTemp(), 0); // this should be lowered to 70
-    }
-
-    @Test
     public void testVariableUpdates() throws Exception {
         MockColorTouchChannel channel = new MockColorTouchChannel();
-        MockVariablePublisher vp = new MockVariablePublisher();
-        MockVariableManager vm = new MockVariableManager(vp);
+        MockVariableManager vm = new MockVariableManager();
         MockDiscoManager dm = new MockDiscoManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
         plugin.setVariableManager(vm);
         plugin.setDiscoManager(dm);
-        assertEquals(0, vp.getVariableUpdates().size());
+        assertEquals(0, vm.getVariableUpdates().size());
 
         InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, new URI("http://localhost"), info);
-        tstat.onStartup();
+        tstat.onStartup(null);
 
         // verify that the appropriate variables were published
-        assertEquals(4, vm.getDeviceVariables(UserUtil.DEFAULT_USER, UserUtil.DEFAULT_HUB, "foo", "localhost").size());
-        for (HobsonVariable v : vm.getDeviceVariables(UserUtil.DEFAULT_USER, UserUtil.DEFAULT_HUB, "foo", "localhost")) {
+        assertEquals(5, vm.getDeviceVariables(tstat.getContext()).getCollection().size());
+        for (HobsonVariable v : vm.getDeviceVariables(tstat.getContext()).getCollection()) {
             assertTrue(
                 (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(1.0)) ||
-                (VariableConstants.TARGET_TEMP_F.equals(v.getName()) && v.getValue().equals(2.0)) ||
+                (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(2.0)) ||
+                (VariableConstants.TARGET_HEAT_TEMP_F.equals(v.getName()) && v.getValue().equals(3.0)) ||
                 (VariableConstants.TSTAT_FAN_MODE.equals(v.getName()) && v.getValue().equals("ON")) ||
                 (VariableConstants.TSTAT_MODE.equals(v.getName()) && v.getValue().equals("COOL"))
             );
         }
-        assertEquals(0, vp.getVariableUpdates().size());
+        assertEquals(0, vm.getVariableUpdates().size());
 
-        // update tstat information with two changes (TEMP_F and TARGET_TEMP_F)
-        tstat.onInfoResponse(null, new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.5, 3.5, 2.0, 2.0), null, System.currentTimeMillis());
+        // update tstat information with two changes (TEMP_F and TARGET_TEMP_COOL_F)
+        tstat.onInfoResponse(null, new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.5, 3.5, 3.0, 2.0), null, System.currentTimeMillis());
 
         // verify that only the two variable updates occurred
-        assertEquals(2, vp.getVariableUpdates().size());
-        for (VariableUpdate vu : vp.getVariableUpdates()) {
+        assertEquals(2, vm.getVariableUpdates().size());
+        for (VariableUpdate vu : vm.getVariableUpdates()) {
             assertTrue(
                 (VariableConstants.TEMP_F.equals(vu.getName()) && vu.getValue().equals(1.5)) ||
-                (VariableConstants.TARGET_TEMP_F.equals(vu.getName()) && vu.getValue().equals(3.5))
+                (VariableConstants.TARGET_COOL_TEMP_F.equals(vu.getName()) && vu.getValue().equals(3.5))
             );
         }
     }
@@ -261,17 +183,16 @@ public class ColorTouchThermostatTest {
     public void testMultipleVariableUpdates() throws Exception {
         URI baseURI = new URI("http://localhost");
         MockColorTouchChannel channel = new MockColorTouchChannel();
-        MockVariablePublisher vp = new MockVariablePublisher();
-        MockVariableManager vm = new MockVariableManager(vp);
+        MockVariableManager vm = new MockVariableManager();
         MockDiscoManager dm = new MockDiscoManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
         plugin.setVariableManager(vm);
         plugin.setDiscoManager(dm);
-        assertEquals(0, vp.getVariableUpdates().size());
+        assertEquals(0, vm.getVariableUpdates().size());
 
-        InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
+        InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 4.0, 2.0);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, baseURI, info);
-        tstat.onStartup();
+        tstat.onStartup(null);
 
         // set one variable and confirm that the info request was sent
         assertEquals(0, channel.getInfoRequests().size());
@@ -297,17 +218,16 @@ public class ColorTouchThermostatTest {
     public void testDuplicateVariableUpdates() throws Exception {
         URI baseURI = new URI("http://localhost");
         MockColorTouchChannel channel = new MockColorTouchChannel();
-        MockVariablePublisher vp = new MockVariablePublisher();
-        MockVariableManager vm = new MockVariableManager(vp);
+        MockVariableManager vm = new MockVariableManager();
         MockDiscoManager dm = new MockDiscoManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
         plugin.setVariableManager(vm);
         plugin.setDiscoManager(dm);
-        assertEquals(0, vp.getVariableUpdates().size());
+        assertEquals(0, vm.getVariableUpdates().size());
 
         InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, baseURI, info);
-        tstat.onStartup();
+        tstat.onStartup(null);
 
         // send two variable requests
         assertEquals(0, channel.getInfoRequests().size());
@@ -329,17 +249,16 @@ public class ColorTouchThermostatTest {
     public void testNoDuplicateControlRequests() throws Exception {
         URI baseURI = new URI("http://localhost");
         MockColorTouchChannel channel = new MockColorTouchChannel();
-        MockVariablePublisher vp = new MockVariablePublisher();
-        MockVariableManager vm = new MockVariableManager(vp);
+        MockVariableManager vm = new MockVariableManager();
         MockDiscoManager dm = new MockDiscoManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
         plugin.setVariableManager(vm);
         plugin.setDiscoManager(dm);
-        assertEquals(0, vp.getVariableUpdates().size());
+        assertEquals(0, vm.getVariableUpdates().size());
 
         InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, baseURI, info);
-        tstat.onStartup();
+        tstat.onStartup(null);
 
         // send two variable requests
         assertEquals(0, channel.getInfoRequests().size());
@@ -374,17 +293,16 @@ public class ColorTouchThermostatTest {
     public void testMultipleOnRefreshCallsBeforeNextInfoRequestInterval() throws Exception {
         URI baseURI = new URI("http://localhost");
         MockColorTouchChannel channel = new MockColorTouchChannel();
-        MockVariablePublisher vp = new MockVariablePublisher();
-        MockVariableManager vm = new MockVariableManager(vp);
+        MockVariableManager vm = new MockVariableManager();
         MockDiscoManager dm = new MockDiscoManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
         plugin.setVariableManager(vm);
         plugin.setDiscoManager(dm);
-        assertEquals(0, vp.getVariableUpdates().size());
+        assertEquals(0, vm.getVariableUpdates().size());
 
         InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, baseURI, info);
-        tstat.onStartup();
+        tstat.onStartup(null);
 
         long now = System.currentTimeMillis();
 
@@ -408,17 +326,16 @@ public class ColorTouchThermostatTest {
     public void testMultipleOnRefreshCallsWithPendingVariable() throws Exception {
         URI baseURI = new URI("http://localhost");
         MockColorTouchChannel channel = new MockColorTouchChannel();
-        MockVariablePublisher vp = new MockVariablePublisher();
-        MockVariableManager vm = new MockVariableManager(vp);
+        MockVariableManager vm = new MockVariableManager();
         MockDiscoManager dm = new MockDiscoManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
         plugin.setVariableManager(vm);
         plugin.setDiscoManager(dm);
-        assertEquals(0, vp.getVariableUpdates().size());
+        assertEquals(0, vm.getVariableUpdates().size());
 
         InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, baseURI, info);
-        tstat.onStartup();
+        tstat.onStartup(null);
 
         long now = System.currentTimeMillis();
 
@@ -457,60 +374,41 @@ public class ColorTouchThermostatTest {
     public void testValueInvalidation() throws Exception {
         URI uri = new URI("http://192.168.0.129");
         MockColorTouchChannel channel = new MockColorTouchChannel();
-        MockVariablePublisher vp = new MockVariablePublisher();
-        MockVariableManager vm = new MockVariableManager(vp);
-        MockDevicePublisher dp = new MockDevicePublisher();
-        MockDeviceManager dm = new MockDeviceManager(dp);
+        MockVariableManager vm = new MockVariableManager();
+        MockDeviceManager dm = new MockDeviceManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("pluginId");
         plugin.setDeviceManager(dm);
         plugin.setVariableManager(vm);
 
         ColorTouchThermostat ctt = new ColorTouchThermostat(plugin, channel, uri, null);
 
-        dp.publishDevice(plugin, ctt);
+        dm.publishDevice(ctt);
 
         // make sure no variable updates exist
-        assertEquals(0, vp.getVariableUpdates().size());
+        assertEquals(0, vm.getVariableUpdates().size());
 
         // send a successful InfoResponse
-        plugin.onHttpResponse(200, null, "{\"name\": \"Office\",\"mode\": 3,\"state\": 0,\"fan\": 0,\"fanstate\": 0,\"tempunits\": 0,\"schedule\": 0,\"schedulepart\": 0,\"away\": 0,\"holiday\": 0,\"override\": 0,\"overridetime\": 0,\"forceunocc\": 0,\"spacetemp\": 79,\"heattemp\": 78,\"cooltemp\": 75,\"cooltempmin\": 35,\"cooltempmax\": 99,\"heattempmin\": 35,\"heattempmax\": 99,\"setpointdelta\": 2,\"availablemodes\": 0}", new InfoRequest(uri, ctt.getId()));
-        assertEquals(4, vp.getVariableUpdates().size());
+        plugin.onHttpResponse(200, null, "{\"name\": \"Office\",\"mode\": 3,\"state\": 0,\"fan\": 0,\"fanstate\": 0,\"tempunits\": 0,\"schedule\": 0,\"schedulepart\": 0,\"away\": 0,\"holiday\": 0,\"override\": 0,\"overridetime\": 0,\"forceunocc\": 0,\"spacetemp\": 79,\"heattemp\": 78,\"cooltemp\": 75,\"cooltempmin\": 35,\"cooltempmax\": 99,\"heattempmin\": 35,\"heattempmax\": 99,\"setpointdelta\": 2,\"availablemodes\": 0}", new InfoRequest(uri, ctt.getContext()));
+        assertEquals(5, vm.getVariableUpdates().size());
 
-        vp.clearVariableUpdates();
+        vm.clearVariableUpdates();
 
         // send an InfoRequest failure
-        plugin.onHttpRequestFailure(new RuntimeException(), new InfoRequest(uri, ctt.getId()));
+        plugin.onHttpRequestFailure(new RuntimeException(), new InfoRequest(uri, ctt.getContext()));
 
         // make sure thermostat invalidated all values due to the failure
-        assertEquals(4, vp.getVariableUpdates().size());
-        for (VariableUpdate vu : vp.getVariableUpdates()) {
+        assertEquals(4, vm.getVariableUpdates().size());
+        for (VariableUpdate vu : vm.getVariableUpdates()) {
             assertNull(vu.getValue());
         }
-        vp.clearVariableUpdates();
+        vm.clearVariableUpdates();
 
         // send an successful InfoResponse
-        plugin.onHttpResponse(200, null, "{\"name\": \"Office\",\"mode\": 3,\"state\": 0,\"fan\": 0,\"fanstate\": 0,\"tempunits\": 0,\"schedule\": 0,\"schedulepart\": 0,\"away\": 0,\"holiday\": 0,\"override\": 0,\"overridetime\": 0,\"forceunocc\": 0,\"spacetemp\": 79,\"heattemp\": 73,\"cooltemp\": 75,\"cooltempmin\": 35,\"cooltempmax\": 99,\"heattempmin\": 35,\"heattempmax\": 99,\"setpointdelta\": 2,\"availablemodes\": 0}", new InfoRequest(uri, ctt.getId()));
-        assertEquals(4, vp.getVariableUpdates().size());
-        for (VariableUpdate vu : vp.getVariableUpdates()) {
+        plugin.onHttpResponse(200, null, "{\"name\": \"Office\",\"mode\": 3,\"state\": 0,\"fan\": 0,\"fanstate\": 0,\"tempunits\": 0,\"schedule\": 0,\"schedulepart\": 0,\"away\": 0,\"holiday\": 0,\"override\": 0,\"overridetime\": 0,\"forceunocc\": 0,\"spacetemp\": 79,\"heattemp\": 73,\"cooltemp\": 75,\"cooltempmin\": 35,\"cooltempmax\": 99,\"heattempmin\": 35,\"heattempmax\": 99,\"setpointdelta\": 2,\"availablemodes\": 0}", new InfoRequest(uri, ctt.getContext()));
+        assertEquals(5, vm.getVariableUpdates().size());
+        for (VariableUpdate vu : vm.getVariableUpdates()) {
             assertNotNull(vu.getValue());
         }
-    }
-
-    @Test
-    public void testCalculateTargetTemp() throws Exception {
-        ColorTouchThermostat t = new ColorTouchThermostat(null, null, new URI("http://192.168.0.129"), null);
-        assertEquals(73.0, t.calculateTargetTemp(ThermostatMode.COOL.toString(), 73.0, 71.0), 0);
-        assertEquals(71.0, t.calculateTargetTemp(ThermostatMode.COOL.toString(), 71.0, 77.0), 0);
-
-        assertEquals(72.0, t.calculateTargetTemp(ThermostatMode.HEAT.toString(), 75.0, 72.0), 0);
-        assertEquals(71.0, t.calculateTargetTemp(ThermostatMode.HEAT.toString(), 73.0, 71.0), 0);
-
-        assertEquals(70.0, t.calculateTargetTemp(ThermostatMode.AUTO.toString(), 71.0, 69.0), 0);
-        assertEquals(70.0, t.calculateTargetTemp(ThermostatMode.AUTO.toString(), 71.0, 69.0), 0);
-        assertEquals(70.0, t.calculateTargetTemp(ThermostatMode.AUTO.toString(), 70.0, 69.0), 0);
-        assertEquals(71.0, t.calculateTargetTemp(ThermostatMode.AUTO.toString(), 71.0, 71.0), 0);
-
-        assertNull(t.calculateTargetTemp(ThermostatMode.OFF.toString(), 70.0, 69.0));
     }
 
     public void testOnSetVariableWithValue(Object value) throws Exception {
@@ -524,7 +422,7 @@ public class ColorTouchThermostatTest {
         assertFalse(tstat.hasPendingControlConfirmation());
 
         // send a set variable request; we expect this to trigger an info request and no control request
-        tstat.onSetVariable(VariableConstants.TARGET_TEMP_F, value);
+        tstat.onSetVariable(VariableConstants.TARGET_COOL_TEMP_F, value);
         assertEquals(1, channel.getInfoRequests().size());
         assertEquals(0, channel.getControlRequests().size());
         assertTrue(tstat.hasPendingControlConfirmation());

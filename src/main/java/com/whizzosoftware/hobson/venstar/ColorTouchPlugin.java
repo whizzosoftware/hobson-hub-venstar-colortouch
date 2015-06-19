@@ -9,7 +9,7 @@ package com.whizzosoftware.hobson.venstar;
 
 import com.whizzosoftware.hobson.api.HobsonNotFoundException;
 import com.whizzosoftware.hobson.api.HobsonRuntimeException;
-import com.whizzosoftware.hobson.api.config.ConfigurationPropertyMetaData;
+import com.whizzosoftware.hobson.api.device.DeviceContext;
 import com.whizzosoftware.hobson.api.device.HobsonDevice;
 import com.whizzosoftware.hobson.api.disco.DeviceAdvertisement;
 import com.whizzosoftware.hobson.api.event.DeviceAdvertisementEvent;
@@ -17,6 +17,8 @@ import com.whizzosoftware.hobson.api.event.EventTopics;
 import com.whizzosoftware.hobson.api.event.HobsonEvent;
 import com.whizzosoftware.hobson.api.plugin.PluginStatus;
 import com.whizzosoftware.hobson.api.plugin.http.AbstractHttpClientPlugin;
+import com.whizzosoftware.hobson.api.property.PropertyContainer;
+import com.whizzosoftware.hobson.api.property.TypedProperty;
 import com.whizzosoftware.hobson.ssdp.SSDPPacket;
 import com.whizzosoftware.hobson.venstar.api.ColorTouchChannel;
 import com.whizzosoftware.hobson.venstar.api.dto.*;
@@ -50,6 +52,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
 
     public ColorTouchPlugin(String pluginId) {
         super(pluginId);
+
         this.state = new DiscoveryState();
     }
 
@@ -58,21 +61,26 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     // ***
 
     @Override
-    public void onStartup(Dictionary config) {
-        addConfigurationPropertyMetaData(new ConfigurationPropertyMetaData("thermostat.host", "Thermostat Host", "The hostname or IP address of a ColorTouch thermostat", ConfigurationPropertyMetaData.Type.STRING));
-
+    public void onStartup(PropertyContainer config) {
         // set to running status
-        setStatus(new PluginStatus(PluginStatus.Status.RUNNING));
+        setStatus(PluginStatus.running());
 
         // request SSDP device advertisements events that occurred before this plugin started
         requestDeviceAdvertisementSnapshot(SSDPPacket.PROTOCOL_ID);
 
         // check if a thermostat has been manually configured
-        addManualHostIfNotDiscovered((String) config.get(PROP_THERMOSTAT_HOST));
+        addManualHostIfNotDiscovered((String)config.getPropertyValue(PROP_THERMOSTAT_HOST));
     }
 
     @Override
     public void onShutdown() {
+    }
+
+    @Override
+    protected TypedProperty[] createSupportedProperties() {
+        return new TypedProperty[] {
+            new TypedProperty("thermotat.host", "Thermostat Host", "The hostname or IP address of a ColorTouch thermostat", TypedProperty.Type.STRING)
+        };
     }
 
     @Override
@@ -97,13 +105,14 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     }
 
     @Override
-    public void onPluginConfigurationUpdate(Dictionary config) {
-        addManualHostIfNotDiscovered((String)config.get(PROP_THERMOSTAT_HOST));
+    public void onPluginConfigurationUpdate(PropertyContainer config) {
+        addManualHostIfNotDiscovered((String)config.getPropertyValue(PROP_THERMOSTAT_HOST));
     }
 
     @Override
-    public void onSetDeviceVariable(String deviceId, String variableName, Object value) {
-        state.onSetDeviceVariable(this, deviceId, variableName, value);
+    public void onSetDeviceVariable(DeviceContext context, String variableName, Object value) {
+        // we override this to run the set variable request through the state machine
+        state.onSetDeviceVariable(this, context, variableName, value);
     }
 
     @Override
@@ -122,7 +131,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
                             discoveredURIs.add(uri);
                             state.onThermostatFound(this);
                             // TODO: make sure not to overwrite this property
-                            setPluginConfigurationProperty(getId(), PROP_THERMOSTAT_HOST, uri.getHost());
+                            setPluginConfigurationProperty(getContext(), PROP_THERMOSTAT_HOST, uri.getHost());
                         }
                     } catch (URISyntaxException e) {
                         logger.error("ColorTouch thermostat location is not a valid URI; ignoring", e);
@@ -203,15 +212,15 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
                 if (device instanceof ColorTouchThermostat) {
                     ((ColorTouchThermostat) device).onRefresh(now);
                 } else {
-                    logger.error("Unable to refresh unknown device: {}", device.getId());
+                    logger.error("Unable to refresh unknown device: {}", device.getContext());
                 }
             }
         }
     }
 
     @Override
-    public void doSetDeviceVariable(String deviceId, String name, Object value) {
-        getDevice(deviceId).getRuntime().onSetVariable(name, value);
+    public void doSetDeviceVariable(DeviceContext context, String name, Object value) {
+        getDevice(context).getRuntime().onSetVariable(name, value);
     }
 
     @Override
@@ -270,10 +279,10 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     // ***
 
     @Override
-    public ColorTouchThermostat getThermostatDevice(String deviceId) {
-        HobsonDevice device = getDevice(deviceId);
+    public ColorTouchThermostat getThermostatDevice(DeviceContext context) {
+        HobsonDevice device = getDevice(context);
         if (!(device instanceof ColorTouchThermostat)) {
-            throw new HobsonNotFoundException("Device " + deviceId + " found but it's not a ColorTouch thermostat: " + device);
+            throw new HobsonNotFoundException("Device " + context + " found but it's not a ColorTouch thermostat: " + device);
         }
         return (ColorTouchThermostat)device;
     }
