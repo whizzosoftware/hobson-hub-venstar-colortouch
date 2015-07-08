@@ -44,7 +44,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public static final String PROP_THERMOSTAT_HOST = "thermostat.host";
-    private static final long DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 1;
+    private static final long DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 30;
 
     private State state;
     private final List<URI> discoveredURIs = new ArrayList<>();
@@ -79,7 +79,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     @Override
     protected TypedProperty[] createSupportedProperties() {
         return new TypedProperty[] {
-            new TypedProperty("thermotat.host", "Thermostat Host", "The hostname or IP address of a ColorTouch thermostat", TypedProperty.Type.STRING)
+            new TypedProperty(PROP_THERMOSTAT_HOST, "Thermostat Host", "The hostname or IP address of a ColorTouch thermostat", TypedProperty.Type.STRING)
         };
     }
 
@@ -206,7 +206,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
 
     @Override
     public void refreshAllThermostats(long now) {
-        Collection<HobsonDevice> devices = getAllDevices();
+        Collection<HobsonDevice> devices = getAllPluginDevices();
         if (devices != null) {
             for (HobsonDevice device : devices) {
                 if (device instanceof ColorTouchThermostat) {
