@@ -285,7 +285,7 @@ public class ColorTouchThermostatTest {
         assertTrue(tstat.hasPendingControlConfirmation());
 
         // perform a refresh after the pending timeout interval and make sure there is no longer a pending state
-        tstat.onRefresh(now + PendingConfirmation.PENDING_CONTROL_REQUEST_TIMEOUT);
+        tstat.onRefresh(now + PendingConfirmation.PENDING_CONTROL_REQUEST_TIMEOUT + 1);
         assertFalse(tstat.hasPendingControlConfirmation());
     }
 
