@@ -69,6 +69,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
             this.defaultName = info.getName();
             // set the current state to the InfoResponse argument
             this.currentState.update(
+                info.getOn(),
                 info.getMode().toString(),
                 info.getFanMode().toString(),
                 info.getSpaceTemp(),
@@ -81,6 +82,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
     @Override
     public void onStartup(PropertyContainer config) {
         // publish necessary variables
+        publishVariable(VariableConstants.ON, null, HobsonVariable.Mask.READ_ONLY);
         publishVariable(VariableConstants.TEMP_F, currentState.getTempF(), HobsonVariable.Mask.READ_ONLY);
         publishVariable(VariableConstants.TSTAT_MODE, currentState.getMode(), HobsonVariable.Mask.READ_WRITE);
         publishVariable(VariableConstants.TSTAT_FAN_MODE, currentState.getFanMode(), HobsonVariable.Mask.READ_WRITE);
@@ -191,6 +193,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
         if (response != null) {
             // create a new variable state based on the response
             VariableState responseState = new VariableState(
+                response.getOn(),
                 response.getMode().toString(),
                 response.getFanMode().toString(),
                 response.getSpaceTemp(),
@@ -242,6 +245,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
 
             // update the current state to reflect the response state
             currentState.update(
+                responseState.getOn(),
                 responseState.getMode(),
                 responseState.getFanMode(),
                 responseState.getTempF(),

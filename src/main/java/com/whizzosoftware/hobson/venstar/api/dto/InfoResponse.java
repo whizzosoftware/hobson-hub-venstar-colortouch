@@ -15,6 +15,7 @@ import org.json.JSONObject;
  * @author Dan Noguerol
  */
 public class InfoResponse {
+    private Boolean on;
     private String name;
     private ThermostatMode mode;
     private FanMode fanMode;
@@ -24,7 +25,8 @@ public class InfoResponse {
     private Double heatTemp;
     private Double setPointDelta;
 
-    public InfoResponse(String name, ThermostatMode mode, FanMode fanMode, Integer tempUnits, Double spaceTemp, Double coolTemp, Double heatTemp, Double setPointDelta) {
+    public InfoResponse(Boolean on, String name, ThermostatMode mode, FanMode fanMode, Integer tempUnits, Double spaceTemp, Double coolTemp, Double heatTemp, Double setPointDelta) {
+        this.on = on;
         this.name = name;
         this.mode = mode;
         this.fanMode = fanMode;
@@ -38,6 +40,10 @@ public class InfoResponse {
     public InfoResponse(JSONObject json) {
         if (json.has("name")) {
             name = json.getString("name");
+        }
+        if (json.has("state")) {
+            int s = json.getInt("state");
+            on = (s >= 1 && s <= 2);
         }
         if (json.has("mode")) {
             mode = ThermostatMode.values()[json.getInt("mode")];
@@ -64,6 +70,10 @@ public class InfoResponse {
 
     public String getName() {
         return name;
+    }
+
+    public Boolean getOn() {
+        return on;
     }
 
     public ThermostatMode getMode() {

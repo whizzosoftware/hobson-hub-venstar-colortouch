@@ -15,6 +15,7 @@ import com.whizzosoftware.hobson.api.variable.VariableConstants;
  * @author Dan Noguerol
  */
 public class VariableState {
+    private Boolean on;
     private String mode;
     private String fanMode;
     private Double tempF;
@@ -23,11 +24,12 @@ public class VariableState {
 
     public VariableState() {}
 
-    public VariableState(String mode, String fanMode, Double tempF, Double coolTempF, Double heatTempF) {
-        update(mode, fanMode, tempF, coolTempF, heatTempF);
+    public VariableState(Boolean on, String mode, String fanMode, Double tempF, Double coolTempF, Double heatTempF) {
+        update(on, mode, fanMode, tempF, coolTempF, heatTempF);
     }
 
-    public void update(String mode, String fanMode, Double tempF, Double coolTempF, Double heatTempF) {
+    public void update(Boolean on, String mode, String fanMode, Double tempF, Double coolTempF, Double heatTempF) {
+        this.on = on;
         this.mode = mode;
         this.fanMode = fanMode;
         this.tempF = tempF;
@@ -41,6 +43,18 @@ public class VariableState {
         this.tempF = null;
         this.coolTempF = null;
         this.heatTempF = null;
+    }
+
+    public boolean hasOn() {
+        return (on != null);
+    }
+
+    public Boolean getOn() {
+        return on;
+    }
+
+    public void setOn(Boolean on) {
+        this.on = on;
     }
 
     public boolean hasMode() {

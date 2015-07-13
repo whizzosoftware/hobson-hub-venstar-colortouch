@@ -23,7 +23,7 @@ import static org.junit.Assert.*;
 public class ColorTouchThermostatTest {
     @Test
     public void testConstructor() throws Exception {
-        InfoResponse info = new InfoResponse("thermo", ThermostatMode.AUTO, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
+        InfoResponse info = new InfoResponse(null, "thermo", ThermostatMode.AUTO, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
         ColorTouchPlugin plugin = new ColorTouchPlugin("plugin");
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
         assertEquals("192-168-0-129", t.getContext().getDeviceId());
@@ -40,13 +40,14 @@ public class ColorTouchThermostatTest {
         ColorTouchPlugin plugin = new ColorTouchPlugin("id");
         MockVariableManager vm = new MockVariableManager();
         plugin.setVariableManager(vm);
-        InfoResponse info = new InfoResponse("name", ThermostatMode.HEAT, FanMode.AUTO, 0, 71.0, 75.0, 70.0, 2.0);
+        InfoResponse info = new InfoResponse(null, "name", ThermostatMode.HEAT, FanMode.AUTO, 0, 71.0, 75.0, 70.0, 2.0);
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
         t.onStartup(null);
         Collection<HobsonVariable> vars = vm.getDeviceVariables(t.getContext()).getCollection();
-        assertEquals(5, vars.size());
+        assertEquals(6, vars.size());
         for (HobsonVariable v : vars) {
             assertTrue(
+                (VariableConstants.ON.equals(v.getName()) && v.getValue() == null) ||
                 (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(71.0)) ||
                 (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(75.0)) ||
                 (VariableConstants.TARGET_HEAT_TEMP_F.equals(v.getName()) && v.getValue().equals(70.0)) ||
@@ -61,13 +62,14 @@ public class ColorTouchThermostatTest {
         ColorTouchPlugin plugin = new ColorTouchPlugin("id");
         MockVariableManager vm = new MockVariableManager();
         plugin.setVariableManager(vm);
-        InfoResponse info = new InfoResponse("name", ThermostatMode.COOL, FanMode.AUTO, 0, 74.0, 75.0, 70.0, 2.0);
+        InfoResponse info = new InfoResponse(null, "name", ThermostatMode.COOL, FanMode.AUTO, 0, 74.0, 75.0, 70.0, 2.0);
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
         t.onStartup(null);
         Collection<HobsonVariable> vars = vm.getDeviceVariables(t.getContext()).getCollection();
-        assertEquals(5, vars.size());
+        assertEquals(6, vars.size());
         for (HobsonVariable v : vars) {
             assertTrue(
+                (VariableConstants.ON.equals(v.getName()) && v.getValue() == null) ||
                 (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(74.0)) ||
                 (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(75.0)) ||
                 (VariableConstants.TARGET_HEAT_TEMP_F.equals(v.getName()) && v.getValue().equals(70.0)) ||
@@ -82,13 +84,14 @@ public class ColorTouchThermostatTest {
         ColorTouchPlugin plugin = new ColorTouchPlugin("id");
         MockVariableManager vm = new MockVariableManager();
         plugin.setVariableManager(vm);
-        InfoResponse info = new InfoResponse("name", ThermostatMode.AUTO, FanMode.AUTO, 0, 71.0, 70.0, 68.0, 2.0);
+        InfoResponse info = new InfoResponse(null, "name", ThermostatMode.AUTO, FanMode.AUTO, 0, 71.0, 70.0, 68.0, 2.0);
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
         t.onStartup(null);
         Collection<HobsonVariable> vars = vm.getDeviceVariables(t.getContext()).getCollection();
-        assertEquals(5, vars.size());
+        assertEquals(6, vars.size());
         for (HobsonVariable v : vars) {
             assertTrue(
+                (VariableConstants.ON.equals(v.getName()) && v.getValue() == null) ||
                 (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(71.0)) ||
                 (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(70.0)) ||
                 (VariableConstants.TARGET_HEAT_TEMP_F.equals(v.getName()) && v.getValue().equals(68.0)) ||
@@ -101,7 +104,7 @@ public class ColorTouchThermostatTest {
     @Test
     public void testTargetTempFHeatMode() throws Exception {
         URI uri = new URI("http://192.168.0.129");
-        InfoResponse info = new InfoResponse("name", ThermostatMode.HEAT, FanMode.AUTO, 0, 71.0, 71.0, 71.0, 2.0);
+        InfoResponse info = new InfoResponse(null, "name", ThermostatMode.HEAT, FanMode.AUTO, 0, 71.0, 71.0, 71.0, 2.0);
         MockVariableManager vm = new MockVariableManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("pluginId");
         plugin.setVariableManager(vm);
@@ -121,7 +124,7 @@ public class ColorTouchThermostatTest {
 
     @Test
     public void testTargetTempFCoolMode() throws Exception {
-        InfoResponse info = new InfoResponse("name", ThermostatMode.COOL, FanMode.AUTO, 0, 71.0, 71.0, 71.0, 2.0);
+        InfoResponse info = new InfoResponse(null, "name", ThermostatMode.COOL, FanMode.AUTO, 0, 71.0, 71.0, 71.0, 2.0);
         MockColorTouchChannel channel = new MockColorTouchChannel();
         MockVariableManager vm = new MockVariableManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("pluginId");
@@ -149,14 +152,15 @@ public class ColorTouchThermostatTest {
         plugin.setDiscoManager(dm);
         assertEquals(0, vm.getVariableUpdates().size());
 
-        InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
+        InfoResponse info = new InfoResponse(null, "thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, new URI("http://localhost"), info);
         tstat.onStartup(null);
 
         // verify that the appropriate variables were published
-        assertEquals(5, vm.getDeviceVariables(tstat.getContext()).getCollection().size());
+        assertEquals(6, vm.getDeviceVariables(tstat.getContext()).getCollection().size());
         for (HobsonVariable v : vm.getDeviceVariables(tstat.getContext()).getCollection()) {
             assertTrue(
+                (VariableConstants.ON.equals(v.getName()) && v.getValue() == null) ||
                 (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(1.0)) ||
                 (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(2.0)) ||
                 (VariableConstants.TARGET_HEAT_TEMP_F.equals(v.getName()) && v.getValue().equals(3.0)) ||
@@ -167,7 +171,7 @@ public class ColorTouchThermostatTest {
         assertEquals(0, vm.getVariableUpdates().size());
 
         // update tstat information with two changes (TEMP_F and TARGET_TEMP_COOL_F)
-        tstat.onInfoResponse(null, new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.5, 3.5, 3.0, 2.0), null, System.currentTimeMillis());
+        tstat.onInfoResponse(null, new InfoResponse(null, "thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.5, 3.5, 3.0, 2.0), null, System.currentTimeMillis());
 
         // verify that only the two variable updates occurred
         assertEquals(2, vm.getVariableUpdates().size());
@@ -190,7 +194,7 @@ public class ColorTouchThermostatTest {
         plugin.setDiscoManager(dm);
         assertEquals(0, vm.getVariableUpdates().size());
 
-        InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 4.0, 2.0);
+        InfoResponse info = new InfoResponse(null, "thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 4.0, 2.0);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, baseURI, info);
         tstat.onStartup(null);
 
@@ -225,7 +229,7 @@ public class ColorTouchThermostatTest {
         plugin.setDiscoManager(dm);
         assertEquals(0, vm.getVariableUpdates().size());
 
-        InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
+        InfoResponse info = new InfoResponse(null, "thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, baseURI, info);
         tstat.onStartup(null);
 
@@ -256,7 +260,7 @@ public class ColorTouchThermostatTest {
         plugin.setDiscoManager(dm);
         assertEquals(0, vm.getVariableUpdates().size());
 
-        InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
+        InfoResponse info = new InfoResponse(null, "thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, baseURI, info);
         tstat.onStartup(null);
 
@@ -269,12 +273,12 @@ public class ColorTouchThermostatTest {
 
         // send the info response with different values as the variable set requests
         assertEquals(0, channel.getControlRequests().size());
-        tstat.onInfoResponse(new InfoRequest(baseURI), new InfoResponse("thermo", ThermostatMode.AUTO, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0), null, System.currentTimeMillis());
+        tstat.onInfoResponse(new InfoRequest(baseURI), new InfoResponse(null, "thermo", ThermostatMode.AUTO, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0), null, System.currentTimeMillis());
         assertEquals(1, channel.getControlRequests().size());
         assertTrue(tstat.hasPendingControlConfirmation());
 
         // send another info response with the same values; no additional control request should be sent
-        tstat.onInfoResponse(new InfoRequest(baseURI), new InfoResponse("thermo", ThermostatMode.AUTO, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0), null, System.currentTimeMillis());
+        tstat.onInfoResponse(new InfoRequest(baseURI), new InfoResponse(null, "thermo", ThermostatMode.AUTO, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0), null, System.currentTimeMillis());
         assertEquals(1, channel.getControlRequests().size());
         assertTrue(tstat.hasPendingControlConfirmation());
 
@@ -300,7 +304,7 @@ public class ColorTouchThermostatTest {
         plugin.setDiscoManager(dm);
         assertEquals(0, vm.getVariableUpdates().size());
 
-        InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
+        InfoResponse info = new InfoResponse(null, "thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, baseURI, info);
         tstat.onStartup(null);
 
@@ -333,7 +337,7 @@ public class ColorTouchThermostatTest {
         plugin.setDiscoManager(dm);
         assertEquals(0, vm.getVariableUpdates().size());
 
-        InfoResponse info = new InfoResponse("thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
+        InfoResponse info = new InfoResponse(null, "thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, baseURI, info);
         tstat.onStartup(null);
 
@@ -428,7 +432,7 @@ public class ColorTouchThermostatTest {
         assertTrue(tstat.hasPendingControlConfirmation());
 
         // send a response to the info request; we expect this to trigger a control request
-        tstat.onInfoResponse(null, new InfoResponse("foo", ThermostatMode.COOL, FanMode.AUTO, 1, 70.0, 71.0, 73.0, 2.0), null, System.currentTimeMillis());
+        tstat.onInfoResponse(null, new InfoResponse(null, "foo", ThermostatMode.COOL, FanMode.AUTO, 1, 70.0, 71.0, 73.0, 2.0), null, System.currentTimeMillis());
         assertEquals(1, channel.getInfoRequests().size());
         assertEquals(1, channel.getControlRequests().size());
         assertTrue(tstat.hasPendingControlConfirmation()); // the pending state is still in effect since we haven't confirmed the change
@@ -446,7 +450,7 @@ public class ColorTouchThermostatTest {
         assertTrue(tstat.hasPendingControlConfirmation());
 
         // send an info response indicating the requested values have changed
-        tstat.onInfoResponse(null, new InfoResponse("foo", ThermostatMode.COOL, FanMode.AUTO, 1, 70.0, cr.getCoolTemp(), cr.getHeatTemp(), 2.0), null, System.currentTimeMillis());
+        tstat.onInfoResponse(null, new InfoResponse(null, "foo", ThermostatMode.COOL, FanMode.AUTO, 1, 70.0, cr.getCoolTemp(), cr.getHeatTemp(), 2.0), null, System.currentTimeMillis());
         assertFalse(tstat.hasPendingControlConfirmation());
     }
 }
