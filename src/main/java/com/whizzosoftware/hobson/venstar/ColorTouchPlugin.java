@@ -44,7 +44,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public static final String PROP_THERMOSTAT_HOST = "thermostat.host";
-    private static final long DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 30;
+    private static final long DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 5;
 
     private State state;
     private final List<URI> discoveredURIs = new ArrayList<>();

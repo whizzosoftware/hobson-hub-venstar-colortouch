@@ -171,12 +171,13 @@ public class ColorTouchThermostatTest {
         assertEquals(0, vm.getVariableUpdates().size());
 
         // update tstat information with two changes (TEMP_F and TARGET_TEMP_COOL_F)
-        tstat.onInfoResponse(null, new InfoResponse(null, "thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.5, 3.5, 3.0, 2.0), null, System.currentTimeMillis());
+        tstat.onInfoResponse(null, new InfoResponse(true, "thermo", ThermostatMode.COOL, FanMode.ON, 100, 1.5, 3.5, 3.0, 2.0), null, System.currentTimeMillis());
 
         // verify that only the two variable updates occurred
-        assertEquals(2, vm.getVariableUpdates().size());
+        assertEquals(3, vm.getVariableUpdates().size());
         for (VariableUpdate vu : vm.getVariableUpdates()) {
             assertTrue(
+                (VariableConstants.ON.equals(vu.getName()) && vu.getValue().equals(true)) ||
                 (VariableConstants.TEMP_F.equals(vu.getName()) && vu.getValue().equals(1.5)) ||
                 (VariableConstants.TARGET_COOL_TEMP_F.equals(vu.getName()) && vu.getValue().equals(3.5))
             );
@@ -393,7 +394,7 @@ public class ColorTouchThermostatTest {
 
         // send a successful InfoResponse
         plugin.onHttpResponse(200, null, "{\"name\": \"Office\",\"mode\": 3,\"state\": 0,\"fan\": 0,\"fanstate\": 0,\"tempunits\": 0,\"schedule\": 0,\"schedulepart\": 0,\"away\": 0,\"holiday\": 0,\"override\": 0,\"overridetime\": 0,\"forceunocc\": 0,\"spacetemp\": 79,\"heattemp\": 78,\"cooltemp\": 75,\"cooltempmin\": 35,\"cooltempmax\": 99,\"heattempmin\": 35,\"heattempmax\": 99,\"setpointdelta\": 2,\"availablemodes\": 0}", new InfoRequest(uri, ctt.getContext()));
-        assertEquals(5, vm.getVariableUpdates().size());
+        assertEquals(6, vm.getVariableUpdates().size());
 
         vm.clearVariableUpdates();
 
