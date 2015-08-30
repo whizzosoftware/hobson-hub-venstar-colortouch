@@ -48,7 +48,7 @@ public class ColorTouchThermostatTest {
         for (HobsonVariable v : vars) {
             assertTrue(
                 (VariableConstants.ON.equals(v.getName()) && v.getValue() == null) ||
-                (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(71.0)) ||
+                (VariableConstants.INDOOR_TEMP_F.equals(v.getName()) && v.getValue().equals(71.0)) ||
                 (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(75.0)) ||
                 (VariableConstants.TARGET_HEAT_TEMP_F.equals(v.getName()) && v.getValue().equals(70.0)) ||
                 (VariableConstants.TSTAT_FAN_MODE.equals(v.getName()) && v.getValue().equals("AUTO")) ||
@@ -70,7 +70,7 @@ public class ColorTouchThermostatTest {
         for (HobsonVariable v : vars) {
             assertTrue(
                 (VariableConstants.ON.equals(v.getName()) && v.getValue() == null) ||
-                (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(74.0)) ||
+                (VariableConstants.INDOOR_TEMP_F.equals(v.getName()) && v.getValue().equals(74.0)) ||
                 (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(75.0)) ||
                 (VariableConstants.TARGET_HEAT_TEMP_F.equals(v.getName()) && v.getValue().equals(70.0)) ||
                 (VariableConstants.TSTAT_FAN_MODE.equals(v.getName()) && v.getValue().equals("AUTO")) ||
@@ -92,7 +92,7 @@ public class ColorTouchThermostatTest {
         for (HobsonVariable v : vars) {
             assertTrue(
                 (VariableConstants.ON.equals(v.getName()) && v.getValue() == null) ||
-                (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(71.0)) ||
+                (VariableConstants.INDOOR_TEMP_F.equals(v.getName()) && v.getValue().equals(71.0)) ||
                 (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(70.0)) ||
                 (VariableConstants.TARGET_HEAT_TEMP_F.equals(v.getName()) && v.getValue().equals(68.0)) ||
                 (VariableConstants.TSTAT_FAN_MODE.equals(v.getName()) && v.getValue().equals("AUTO")) ||
@@ -161,7 +161,7 @@ public class ColorTouchThermostatTest {
         for (HobsonVariable v : vm.getDeviceVariables(tstat.getContext()).getCollection()) {
             assertTrue(
                 (VariableConstants.ON.equals(v.getName()) && v.getValue() == null) ||
-                (VariableConstants.TEMP_F.equals(v.getName()) && v.getValue().equals(1.0)) ||
+                (VariableConstants.INDOOR_TEMP_F.equals(v.getName()) && v.getValue().equals(1.0)) ||
                 (VariableConstants.TARGET_COOL_TEMP_F.equals(v.getName()) && v.getValue().equals(2.0)) ||
                 (VariableConstants.TARGET_HEAT_TEMP_F.equals(v.getName()) && v.getValue().equals(3.0)) ||
                 (VariableConstants.TSTAT_FAN_MODE.equals(v.getName()) && v.getValue().equals("ON")) ||
@@ -178,7 +178,7 @@ public class ColorTouchThermostatTest {
         for (VariableUpdate vu : vm.getVariableUpdates()) {
             assertTrue(
                 (VariableConstants.ON.equals(vu.getName()) && vu.getValue().equals(true)) ||
-                (VariableConstants.TEMP_F.equals(vu.getName()) && vu.getValue().equals(1.5)) ||
+                (VariableConstants.INDOOR_TEMP_F.equals(vu.getName()) && vu.getValue().equals(1.5)) ||
                 (VariableConstants.TARGET_COOL_TEMP_F.equals(vu.getName()) && vu.getValue().equals(3.5))
             );
         }

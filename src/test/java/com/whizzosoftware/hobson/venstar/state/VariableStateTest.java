@@ -37,7 +37,7 @@ public class VariableStateTest {
         assertEquals(FanMode.AUTO.toString(), state.getFanMode());
 
         assertNull(state.getTempF());
-        state.setValue(VariableConstants.TEMP_F, 72.0);
+        state.setValue(VariableConstants.INDOOR_TEMP_F, 72.0);
         assertEquals(72.0, state.getTempF(), 0);
 
         assertNull(state.getCoolTempF());

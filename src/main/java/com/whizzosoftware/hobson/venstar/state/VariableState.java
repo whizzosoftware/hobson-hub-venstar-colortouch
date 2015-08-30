@@ -128,7 +128,7 @@ public class VariableState {
             this.mode = value.toString();
         } else if (VariableConstants.TSTAT_FAN_MODE.equals(name)) {
             this.fanMode = value.toString();
-        } else if (VariableConstants.TEMP_F.equals(name)) {
+        } else if (VariableConstants.INDOOR_TEMP_F.equals(name)) {
             this.tempF = (Double)value;
         } else if (VariableConstants.TARGET_COOL_TEMP_F.equals(name)) {
             this.coolTempF = getDouble(value);

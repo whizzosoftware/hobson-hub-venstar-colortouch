@@ -83,7 +83,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
     public void onStartup(PropertyContainer config) {
         // publish necessary variables
         publishVariable(VariableConstants.ON, currentState.getOn(), HobsonVariable.Mask.READ_ONLY);
-        publishVariable(VariableConstants.TEMP_F, currentState.getTempF(), HobsonVariable.Mask.READ_ONLY);
+        publishVariable(VariableConstants.INDOOR_TEMP_F, currentState.getTempF(), HobsonVariable.Mask.READ_ONLY);
         publishVariable(VariableConstants.TSTAT_MODE, currentState.getMode(), HobsonVariable.Mask.READ_WRITE);
         publishVariable(VariableConstants.TSTAT_FAN_MODE, currentState.getFanMode(), HobsonVariable.Mask.READ_WRITE);
         publishVariable(VariableConstants.TARGET_COOL_TEMP_F, currentState.getCoolTempF(), HobsonVariable.Mask.READ_WRITE);
@@ -101,12 +101,12 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
 
     @Override
     public String getPreferredVariableName() {
-        return VariableConstants.TEMP_F;
+        return VariableConstants.INDOOR_TEMP_F;
     }
 
     @Override
     public String[] getTelemetryVariableNames() {
-        return new String[] {VariableConstants.TEMP_F, VariableConstants.TARGET_TEMP_F};
+        return new String[] {VariableConstants.INDOOR_TEMP_F, VariableConstants.TARGET_TEMP_F};
     }
 
     @Override
@@ -232,7 +232,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
                 updates.add(new VariableUpdate(getContext(), VariableConstants.TSTAT_FAN_MODE, responseState.getFanMode()));
             }
             if (!currentState.hasTempF() || !currentState.getTempF().equals(responseState.getTempF())) {
-                updates.add(new VariableUpdate(getContext(), VariableConstants.TEMP_F, responseState.getTempF()));
+                updates.add(new VariableUpdate(getContext(), VariableConstants.INDOOR_TEMP_F, responseState.getTempF()));
             }
             if (!currentState.hasCoolTempF() || !currentState.getCoolTempF().equals(responseState.getCoolTempF())) {
                 updates.add(new VariableUpdate(getContext(), VariableConstants.TARGET_COOL_TEMP_F, responseState.getCoolTempF()));
@@ -266,7 +266,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
             List<VariableUpdate> updates = new ArrayList<>();
             updates.add(new VariableUpdate(getContext(), VariableConstants.TSTAT_MODE, null));
             updates.add(new VariableUpdate(getContext(), VariableConstants.TSTAT_FAN_MODE, null));
-            updates.add(new VariableUpdate(getContext(), VariableConstants.TEMP_F, null));
+            updates.add(new VariableUpdate(getContext(), VariableConstants.INDOOR_TEMP_F, null));
             updates.add(new VariableUpdate(getContext(), VariableConstants.TARGET_TEMP_F, null));
             fireVariableUpdateNotifications(updates);
         }
