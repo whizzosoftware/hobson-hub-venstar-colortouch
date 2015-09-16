@@ -79,7 +79,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     @Override
     protected TypedProperty[] createSupportedProperties() {
         return new TypedProperty[] {
-            new TypedProperty(PROP_THERMOSTAT_HOST, "Thermostat Host", "The hostname or IP address of a ColorTouch thermostat", TypedProperty.Type.STRING)
+            new TypedProperty(PROP_THERMOSTAT_HOST, "Thermostat Host", "The hostname or IP address of a ColorTouch thermostat. This should be detected automatically but you can enter it manually here if necessary.", TypedProperty.Type.STRING)
         };
     }
 
