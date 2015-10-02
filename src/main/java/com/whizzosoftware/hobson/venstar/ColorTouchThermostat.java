@@ -191,6 +191,9 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
 
         // if it's a good response, process it
         if (response != null) {
+            // flag the device as checked in
+            checkInDevice(now);
+
             // create a new variable state based on the response
             VariableState responseState = new VariableState(
                 response.getOn(),
