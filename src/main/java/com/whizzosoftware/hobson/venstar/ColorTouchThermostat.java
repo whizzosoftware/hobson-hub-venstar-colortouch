@@ -106,7 +106,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
 
     @Override
     public String[] getTelemetryVariableNames() {
-        return new String[] {VariableConstants.INDOOR_TEMP_F, VariableConstants.TARGET_TEMP_F};
+        return new String[] {VariableConstants.INDOOR_TEMP_F, VariableConstants.TARGET_COOL_TEMP_F, VariableConstants.TARGET_HEAT_TEMP_F};
     }
 
     @Override
