@@ -17,6 +17,7 @@ import com.whizzosoftware.hobson.api.event.EventTopics;
 import com.whizzosoftware.hobson.api.event.HobsonEvent;
 import com.whizzosoftware.hobson.api.plugin.PluginStatus;
 import com.whizzosoftware.hobson.api.plugin.http.AbstractHttpClientPlugin;
+import com.whizzosoftware.hobson.api.property.PropertyConstraintType;
 import com.whizzosoftware.hobson.api.property.PropertyContainer;
 import com.whizzosoftware.hobson.api.property.TypedProperty;
 import com.whizzosoftware.hobson.ssdp.SSDPPacket;
@@ -79,7 +80,13 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     @Override
     protected TypedProperty[] createSupportedProperties() {
         return new TypedProperty[] {
-            new TypedProperty(PROP_THERMOSTAT_HOST, "Thermostat Host", "The hostname or IP address of a ColorTouch thermostat. This should be detected automatically but you can enter it manually here if necessary.", TypedProperty.Type.STRING)
+            new TypedProperty.Builder(
+                PROP_THERMOSTAT_HOST,
+                "Thermostat Host",
+                "The hostname or IP address of a ColorTouch thermostat. This should be detected automatically but you can enter it manually here if necessary.",
+                TypedProperty.Type.STRING).
+                    constraint(PropertyConstraintType.required, true).
+                    build()
         };
     }
 
