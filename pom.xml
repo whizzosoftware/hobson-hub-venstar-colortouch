@@ -23,7 +23,7 @@
         <dependency>
             <groupId>com.whizzosoftware.hobson.hub</groupId>
             <artifactId>hobson-hub-api</artifactId>
-            <version>0.6.0</version>
+            <version>0.7.0-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -41,7 +41,7 @@
         <dependency>
             <groupId>com.whizzosoftware.hobson.hub</groupId>
             <artifactId>hobson-hub-api-mock</artifactId>
-            <version>0.6.0</version>
+            <version>0.7.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -70,7 +70,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Import-Package>org.osgi.framework,org.osgi.service.cm,org.apache.felix.dm,org.osgi.service.event,org.slf4j,org.json.*,com.whizzosoftware.hobson.api.*;version="[0.6.0,0.7)",com.whizzosoftware.hobson.ssdp;resolution:=optional</Import-Package>
+                        <Import-Package>org.osgi.framework,org.osgi.service.cm,org.apache.felix.dm,org.osgi.service.event,org.slf4j,org.json.*,com.whizzosoftware.hobson.api.*;version="[0.7.0,0.8)",com.whizzosoftware.hobson.ssdp;resolution:=optional</Import-Package>
                         <Bundle-Activator>com.whizzosoftware.hobson.api.osgi.activator.HobsonBundleActivator</Bundle-Activator>
                         <Provide-Capability>hobson.plugin=com.whizzosoftware.hobson.venstar.ColorTouchPlugin</Provide-Capability>
                         <Bundle-Category>hobson-plugin</Bundle-Category>
