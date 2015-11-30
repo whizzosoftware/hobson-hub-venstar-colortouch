@@ -25,6 +25,7 @@ public class ColorTouchThermostatTest {
     public void testConstructor() throws Exception {
         InfoResponse info = new InfoResponse(null, "thermo", ThermostatMode.AUTO, FanMode.ON, 100, 1.0, 2.0, 3.0, 2.0);
         ColorTouchPlugin plugin = new ColorTouchPlugin("plugin");
+        plugin.setDeviceManager(new MockDeviceManager());
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
         assertEquals("192-168-0-129", t.getContext().getDeviceId());
         assertEquals("thermo", t.getDefaultName());
@@ -38,6 +39,7 @@ public class ColorTouchThermostatTest {
     @Test
     public void testOnStartupVariablesInHeatMode() throws Exception {
         ColorTouchPlugin plugin = new ColorTouchPlugin("id");
+        plugin.setDeviceManager(new MockDeviceManager());
         MockVariableManager vm = new MockVariableManager();
         plugin.setVariableManager(vm);
         InfoResponse info = new InfoResponse(null, "name", ThermostatMode.HEAT, FanMode.AUTO, 0, 71.0, 75.0, 70.0, 2.0);
@@ -60,6 +62,7 @@ public class ColorTouchThermostatTest {
     @Test
     public void testOnStartupVariablesInCoolMode() throws Exception {
         ColorTouchPlugin plugin = new ColorTouchPlugin("id");
+        plugin.setDeviceManager(new MockDeviceManager());
         MockVariableManager vm = new MockVariableManager();
         plugin.setVariableManager(vm);
         InfoResponse info = new InfoResponse(null, "name", ThermostatMode.COOL, FanMode.AUTO, 0, 74.0, 75.0, 70.0, 2.0);
@@ -82,6 +85,7 @@ public class ColorTouchThermostatTest {
     @Test
     public void testOnStartupVariablesInAutoMode() throws Exception {
         ColorTouchPlugin plugin = new ColorTouchPlugin("id");
+        plugin.setDeviceManager(new MockDeviceManager());
         MockVariableManager vm = new MockVariableManager();
         plugin.setVariableManager(vm);
         InfoResponse info = new InfoResponse(null, "name", ThermostatMode.AUTO, FanMode.AUTO, 0, 71.0, 70.0, 68.0, 2.0);
@@ -107,6 +111,7 @@ public class ColorTouchThermostatTest {
         InfoResponse info = new InfoResponse(null, "name", ThermostatMode.HEAT, FanMode.AUTO, 0, 71.0, 71.0, 71.0, 2.0);
         MockVariableManager vm = new MockVariableManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("pluginId");
+        plugin.setDeviceManager(new MockDeviceManager());
         plugin.setVariableManager(vm);
         MockColorTouchChannel channel = new MockColorTouchChannel();
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, channel, uri, info);
@@ -128,6 +133,7 @@ public class ColorTouchThermostatTest {
         MockColorTouchChannel channel = new MockColorTouchChannel();
         MockVariableManager vm = new MockVariableManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("pluginId");
+        plugin.setDeviceManager(new MockDeviceManager());
         plugin.setVariableManager(vm);
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, channel, new URI("http://192.168.0.129"), info);
         assertEquals(0, channel.getControlRequests().size());
@@ -148,6 +154,7 @@ public class ColorTouchThermostatTest {
         MockVariableManager vm = new MockVariableManager();
         MockDiscoManager dm = new MockDiscoManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
+        plugin.setDeviceManager(new MockDeviceManager());
         plugin.setVariableManager(vm);
         plugin.setDiscoManager(dm);
         assertEquals(0, vm.getVariableUpdates().size());
@@ -191,6 +198,7 @@ public class ColorTouchThermostatTest {
         MockVariableManager vm = new MockVariableManager();
         MockDiscoManager dm = new MockDiscoManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
+        plugin.setDeviceManager(new MockDeviceManager());
         plugin.setVariableManager(vm);
         plugin.setDiscoManager(dm);
         assertEquals(0, vm.getVariableUpdates().size());
@@ -226,6 +234,7 @@ public class ColorTouchThermostatTest {
         MockVariableManager vm = new MockVariableManager();
         MockDiscoManager dm = new MockDiscoManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
+        plugin.setDeviceManager(new MockDeviceManager());
         plugin.setVariableManager(vm);
         plugin.setDiscoManager(dm);
         assertEquals(0, vm.getVariableUpdates().size());
@@ -257,6 +266,7 @@ public class ColorTouchThermostatTest {
         MockVariableManager vm = new MockVariableManager();
         MockDiscoManager dm = new MockDiscoManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
+        plugin.setDeviceManager(new MockDeviceManager());
         plugin.setVariableManager(vm);
         plugin.setDiscoManager(dm);
         assertEquals(0, vm.getVariableUpdates().size());
@@ -301,6 +311,7 @@ public class ColorTouchThermostatTest {
         MockVariableManager vm = new MockVariableManager();
         MockDiscoManager dm = new MockDiscoManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
+        plugin.setDeviceManager(new MockDeviceManager());
         plugin.setVariableManager(vm);
         plugin.setDiscoManager(dm);
         assertEquals(0, vm.getVariableUpdates().size());
@@ -334,6 +345,7 @@ public class ColorTouchThermostatTest {
         MockVariableManager vm = new MockVariableManager();
         MockDiscoManager dm = new MockDiscoManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
+        plugin.setDeviceManager(new MockDeviceManager());
         plugin.setVariableManager(vm);
         plugin.setDiscoManager(dm);
         assertEquals(0, vm.getVariableUpdates().size());
@@ -420,6 +432,7 @@ public class ColorTouchThermostatTest {
         MockColorTouchChannel channel = new MockColorTouchChannel();
         MockVariableManager vm = new MockVariableManager();
         ColorTouchPlugin plugin = new ColorTouchPlugin("foo");
+        plugin.setDeviceManager(new MockDeviceManager());
         plugin.setVariableManager(vm);
         ColorTouchThermostat tstat = new ColorTouchThermostat(plugin, channel, new URI("http://localhost"), null);
         assertEquals(0, channel.getInfoRequests().size());
