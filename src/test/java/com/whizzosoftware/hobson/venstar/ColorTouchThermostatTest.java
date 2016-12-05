@@ -1,17 +1,21 @@
-/*******************************************************************************
+/*
+ *******************************************************************************
  * Copyright (c) 2014 Whizzo Software, LLC.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- *******************************************************************************/
+ *******************************************************************************
+*/
 package com.whizzosoftware.hobson.venstar;
 
 import com.whizzosoftware.hobson.api.device.MockDeviceManager;
 import com.whizzosoftware.hobson.api.disco.MockDiscoManager;
+import com.whizzosoftware.hobson.api.plugin.http.HttpResponse;
 import com.whizzosoftware.hobson.api.variable.*;
 import com.whizzosoftware.hobson.venstar.api.MockColorTouchChannel;
 import com.whizzosoftware.hobson.venstar.api.dto.*;
+import com.whizzosoftware.hobson.venstar.api.plugin.http.MockHttpResponse;
 import com.whizzosoftware.hobson.venstar.state.PendingConfirmation;
 import org.junit.Test;
 
@@ -45,7 +49,7 @@ public class ColorTouchThermostatTest {
         InfoResponse info = new InfoResponse(null, "name", ThermostatMode.HEAT, FanMode.AUTO, 0, 71.0, 75.0, 70.0, 2.0);
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
         t.onStartup(null);
-        Collection<HobsonVariable> vars = vm.getDeviceVariables(t.getContext()).getCollection();
+        Collection<HobsonVariable> vars = vm.getDeviceVariables(t.getContext());
         assertEquals(6, vars.size());
         for (HobsonVariable v : vars) {
             assertTrue(
@@ -68,7 +72,7 @@ public class ColorTouchThermostatTest {
         InfoResponse info = new InfoResponse(null, "name", ThermostatMode.COOL, FanMode.AUTO, 0, 74.0, 75.0, 70.0, 2.0);
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
         t.onStartup(null);
-        Collection<HobsonVariable> vars = vm.getDeviceVariables(t.getContext()).getCollection();
+        Collection<HobsonVariable> vars = vm.getDeviceVariables(t.getContext());
         assertEquals(6, vars.size());
         for (HobsonVariable v : vars) {
             assertTrue(
@@ -91,7 +95,7 @@ public class ColorTouchThermostatTest {
         InfoResponse info = new InfoResponse(null, "name", ThermostatMode.AUTO, FanMode.AUTO, 0, 71.0, 70.0, 68.0, 2.0);
         ColorTouchThermostat t = new ColorTouchThermostat(plugin, null, new URI("http://192.168.0.129"), info);
         t.onStartup(null);
-        Collection<HobsonVariable> vars = vm.getDeviceVariables(t.getContext()).getCollection();
+        Collection<HobsonVariable> vars = vm.getDeviceVariables(t.getContext());
         assertEquals(6, vars.size());
         for (HobsonVariable v : vars) {
             assertTrue(
@@ -164,8 +168,8 @@ public class ColorTouchThermostatTest {
         tstat.onStartup(null);
 
         // verify that the appropriate variables were published
-        assertEquals(6, vm.getDeviceVariables(tstat.getContext()).getCollection().size());
-        for (HobsonVariable v : vm.getDeviceVariables(tstat.getContext()).getCollection()) {
+        assertEquals(6, vm.getDeviceVariables(tstat.getContext()).size());
+        for (HobsonVariable v : vm.getDeviceVariables(tstat.getContext())) {
             assertTrue(
                 (VariableConstants.ON.equals(v.getName()) && v.getValue() == null) ||
                 (VariableConstants.INDOOR_TEMP_F.equals(v.getName()) && v.getValue().equals(1.0)) ||
@@ -405,7 +409,7 @@ public class ColorTouchThermostatTest {
         assertEquals(0, vm.getVariableUpdates().size());
 
         // send a successful InfoResponse
-        plugin.onHttpResponse(200, null, "{\"name\": \"Office\",\"mode\": 3,\"state\": 0,\"fan\": 0,\"fanstate\": 0,\"tempunits\": 0,\"schedule\": 0,\"schedulepart\": 0,\"away\": 0,\"holiday\": 0,\"override\": 0,\"overridetime\": 0,\"forceunocc\": 0,\"spacetemp\": 79,\"heattemp\": 78,\"cooltemp\": 75,\"cooltempmin\": 35,\"cooltempmax\": 99,\"heattempmin\": 35,\"heattempmax\": 99,\"setpointdelta\": 2,\"availablemodes\": 0}", new InfoRequest(uri, ctt.getContext()));
+        plugin.onHttpResponse(new MockHttpResponse(200, "{\"name\": \"Office\",\"mode\": 3,\"state\": 0,\"fan\": 0,\"fanstate\": 0,\"tempunits\": 0,\"schedule\": 0,\"schedulepart\": 0,\"away\": 0,\"holiday\": 0,\"override\": 0,\"overridetime\": 0,\"forceunocc\": 0,\"spacetemp\": 79,\"heattemp\": 78,\"cooltemp\": 75,\"cooltempmin\": 35,\"cooltempmax\": 99,\"heattempmin\": 35,\"heattempmax\": 99,\"setpointdelta\": 2,\"availablemodes\": 0}"), new InfoRequest(uri, ctt.getContext()));
         assertEquals(6, vm.getVariableUpdates().size());
 
         vm.clearVariableUpdates();
@@ -421,7 +425,8 @@ public class ColorTouchThermostatTest {
         vm.clearVariableUpdates();
 
         // send an successful InfoResponse
-        plugin.onHttpResponse(200, null, "{\"name\": \"Office\",\"mode\": 3,\"state\": 0,\"fan\": 0,\"fanstate\": 0,\"tempunits\": 0,\"schedule\": 0,\"schedulepart\": 0,\"away\": 0,\"holiday\": 0,\"override\": 0,\"overridetime\": 0,\"forceunocc\": 0,\"spacetemp\": 79,\"heattemp\": 73,\"cooltemp\": 75,\"cooltempmin\": 35,\"cooltempmax\": 99,\"heattempmin\": 35,\"heattempmax\": 99,\"setpointdelta\": 2,\"availablemodes\": 0}", new InfoRequest(uri, ctt.getContext()));
+        HttpResponse r;
+        plugin.onHttpResponse(new MockHttpResponse(200, "{\"name\": \"Office\",\"mode\": 3,\"state\": 0,\"fan\": 0,\"fanstate\": 0,\"tempunits\": 0,\"schedule\": 0,\"schedulepart\": 0,\"away\": 0,\"holiday\": 0,\"override\": 0,\"overridetime\": 0,\"forceunocc\": 0,\"spacetemp\": 79,\"heattemp\": 73,\"cooltemp\": 75,\"cooltempmin\": 35,\"cooltempmax\": 99,\"heattempmin\": 35,\"heattempmax\": 99,\"setpointdelta\": 2,\"availablemodes\": 0}"), new InfoRequest(uri, ctt.getContext()));
         assertEquals(5, vm.getVariableUpdates().size());
         for (VariableUpdate vu : vm.getVariableUpdates()) {
             assertNotNull(vu.getValue());

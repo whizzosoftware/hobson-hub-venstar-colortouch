@@ -1,10 +1,12 @@
-/*******************************************************************************
+/*
+ *******************************************************************************
  * Copyright (c) 2014 Whizzo Software, LLC.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- *******************************************************************************/
+ *******************************************************************************
+*/
 package com.whizzosoftware.hobson.venstar;
 
 import com.whizzosoftware.hobson.api.device.AbstractHobsonDevice;
@@ -14,6 +16,7 @@ import com.whizzosoftware.hobson.api.property.PropertyContainer;
 import com.whizzosoftware.hobson.api.property.TypedProperty;
 import com.whizzosoftware.hobson.api.variable.HobsonVariable;
 import com.whizzosoftware.hobson.api.variable.VariableConstants;
+import com.whizzosoftware.hobson.api.variable.VariableContext;
 import com.whizzosoftware.hobson.api.variable.VariableUpdate;
 import com.whizzosoftware.hobson.venstar.api.ColorTouchChannel;
 import com.whizzosoftware.hobson.venstar.api.dto.*;
@@ -35,9 +38,9 @@ import java.util.List;
 public class ColorTouchThermostat extends AbstractHobsonDevice {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    protected static final long DEFAULT_REFRESH_INTERVAL_IN_MS_NO_PENDING_CONFIRMS = 10000;
-    protected static final long DEFAULT_REFRESH_INTERVAL_IN_MS_PENDING_CONFIRMS = 1000;
-    protected static final long DEFAULT_INFO_RESPONSE_TIMEOUT = 5000;
+    static final long DEFAULT_REFRESH_INTERVAL_IN_MS_NO_PENDING_CONFIRMS = 10000;
+    private static final long DEFAULT_REFRESH_INTERVAL_IN_MS_PENDING_CONFIRMS = 1000;
+    private static final long DEFAULT_INFO_RESPONSE_TIMEOUT = 5000;
 
     private ColorTouchChannel channel;
     private URI uri;
@@ -59,7 +62,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
      */
     private final PendingConfirmation pendingConfirmation = new PendingConfirmation();
 
-    public ColorTouchThermostat(HobsonPlugin plugin, ColorTouchChannel channel, URI uri, InfoResponse info) {
+    ColorTouchThermostat(HobsonPlugin plugin, ColorTouchChannel channel, URI uri, InfoResponse info) {
         super(plugin, uri.getHost().replace('.', '-'));
 
         this.channel = channel;
@@ -82,12 +85,13 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
     @Override
     public void onStartup(PropertyContainer config) {
         // publish necessary variables
-        publishVariable(VariableConstants.ON, currentState.getOn(), HobsonVariable.Mask.READ_ONLY);
-        publishVariable(VariableConstants.INDOOR_TEMP_F, currentState.getTempF(), HobsonVariable.Mask.READ_ONLY);
-        publishVariable(VariableConstants.TSTAT_MODE, currentState.getMode(), HobsonVariable.Mask.READ_WRITE);
-        publishVariable(VariableConstants.TSTAT_FAN_MODE, currentState.getFanMode(), HobsonVariable.Mask.READ_WRITE);
-        publishVariable(VariableConstants.TARGET_COOL_TEMP_F, currentState.getCoolTempF(), HobsonVariable.Mask.READ_WRITE);
-        publishVariable(VariableConstants.TARGET_HEAT_TEMP_F, currentState.getHeatTempF(), HobsonVariable.Mask.READ_WRITE);
+        long now = System.currentTimeMillis();
+        publishVariable(VariableConstants.ON, currentState.getOn(), HobsonVariable.Mask.READ_ONLY, now);
+        publishVariable(VariableConstants.INDOOR_TEMP_F, currentState.getTempF(), HobsonVariable.Mask.READ_ONLY, now);
+        publishVariable(VariableConstants.TSTAT_MODE, currentState.getMode(), HobsonVariable.Mask.READ_WRITE, now);
+        publishVariable(VariableConstants.TSTAT_FAN_MODE, currentState.getFanMode(), HobsonVariable.Mask.READ_WRITE, now);
+        publishVariable(VariableConstants.TARGET_COOL_TEMP_F, currentState.getCoolTempF(), HobsonVariable.Mask.READ_WRITE, now);
+        publishVariable(VariableConstants.TARGET_HEAT_TEMP_F, currentState.getHeatTempF(), HobsonVariable.Mask.READ_WRITE, now);
     }
 
     @Override
@@ -102,11 +106,6 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
     @Override
     public String getPreferredVariableName() {
         return VariableConstants.INDOOR_TEMP_F;
-    }
-
-    @Override
-    public String[] getTelemetryVariableNames() {
-        return new String[] {VariableConstants.INDOOR_TEMP_F, VariableConstants.TARGET_COOL_TEMP_F, VariableConstants.TARGET_HEAT_TEMP_F};
     }
 
     @Override
@@ -138,11 +137,11 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
         }
     }
 
-    public URI getBaseURI() {
+    URI getBaseURI() {
         return uri;
     }
 
-    public void onRefresh(long now) {
+    void onRefresh(long now) {
         // by default, our check interval assumes no pending control confirmations
         long checkInterval = DEFAULT_REFRESH_INTERVAL_IN_MS_NO_PENDING_CONFIRMS;
 
@@ -172,11 +171,11 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
         }
     }
 
-    protected VariableState getCurrentState() {
+    VariableState getCurrentState() {
         return currentState;
     }
 
-    protected boolean hasPendingControlConfirmation() {
+    boolean hasPendingControlConfirmation() {
         return pendingConfirmation.getState().hasValues();
     }
 
@@ -192,7 +191,7 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
         // if it's a good response, process it
         if (response != null) {
             // flag the device as checked in
-            checkInDevice(now);
+            setDeviceAvailability(true, now);
 
             // create a new variable state based on the response
             VariableState responseState = new VariableState(
@@ -226,22 +225,22 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
             // build a list of variable updates based on any changes differences between current and response state
             List<VariableUpdate> updates = new ArrayList<>();
             if (!currentState.hasOn() || !currentState.getOn().equals(responseState.getOn())) {
-                updates.add(new VariableUpdate(getContext(), VariableConstants.ON, responseState.getOn()));
+                updates.add(new VariableUpdate(VariableContext.create(getContext(), VariableConstants.ON), responseState.getOn()));
             }
             if (!currentState.hasMode() || !currentState.getMode().equals(responseState.getMode())) {
-                updates.add(new VariableUpdate(getContext(), VariableConstants.TSTAT_MODE, responseState.getMode()));
+                updates.add(new VariableUpdate(VariableContext.create(getContext(), VariableConstants.TSTAT_MODE), responseState.getMode()));
             }
             if (!currentState.hasFanMode() || !currentState.getFanMode().equals(responseState.getFanMode())) {
-                updates.add(new VariableUpdate(getContext(), VariableConstants.TSTAT_FAN_MODE, responseState.getFanMode()));
+                updates.add(new VariableUpdate(VariableContext.create(getContext(), VariableConstants.TSTAT_FAN_MODE), responseState.getFanMode()));
             }
             if (!currentState.hasTempF() || !currentState.getTempF().equals(responseState.getTempF())) {
-                updates.add(new VariableUpdate(getContext(), VariableConstants.INDOOR_TEMP_F, responseState.getTempF()));
+                updates.add(new VariableUpdate(VariableContext.create(getContext(), VariableConstants.INDOOR_TEMP_F), responseState.getTempF()));
             }
             if (!currentState.hasCoolTempF() || !currentState.getCoolTempF().equals(responseState.getCoolTempF())) {
-                updates.add(new VariableUpdate(getContext(), VariableConstants.TARGET_COOL_TEMP_F, responseState.getCoolTempF()));
+                updates.add(new VariableUpdate(VariableContext.create(getContext(), VariableConstants.TARGET_COOL_TEMP_F), responseState.getCoolTempF()));
             }
             if (!currentState.hasHeatTempF() || !currentState.getHeatTempF().equals(responseState.getHeatTempF())) {
-                updates.add(new VariableUpdate(getContext(), VariableConstants.TARGET_HEAT_TEMP_F, responseState.getHeatTempF()));
+                updates.add(new VariableUpdate(VariableContext.create(getContext(), VariableConstants.TARGET_HEAT_TEMP_F), responseState.getHeatTempF()));
             }
 
             // fire variable update notifications if necessary
@@ -267,10 +266,10 @@ public class ColorTouchThermostat extends AbstractHobsonDevice {
 
             // post a null variable update to indicate we no longer know the current values
             List<VariableUpdate> updates = new ArrayList<>();
-            updates.add(new VariableUpdate(getContext(), VariableConstants.TSTAT_MODE, null));
-            updates.add(new VariableUpdate(getContext(), VariableConstants.TSTAT_FAN_MODE, null));
-            updates.add(new VariableUpdate(getContext(), VariableConstants.INDOOR_TEMP_F, null));
-            updates.add(new VariableUpdate(getContext(), VariableConstants.TARGET_TEMP_F, null));
+            updates.add(new VariableUpdate(VariableContext.create(getContext(), VariableConstants.TSTAT_MODE), null));
+            updates.add(new VariableUpdate(VariableContext.create(getContext(), VariableConstants.TSTAT_FAN_MODE), null));
+            updates.add(new VariableUpdate(VariableContext.create(getContext(), VariableConstants.INDOOR_TEMP_F), null));
+            updates.add(new VariableUpdate(VariableContext.create(getContext(), VariableConstants.TARGET_TEMP_F), null));
             fireVariableUpdateNotifications(updates);
         }
     }

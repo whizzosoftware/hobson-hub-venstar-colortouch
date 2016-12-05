@@ -21,12 +21,12 @@ import java.util.Collection;
  * @author Dan Noguerol
  */
 public interface StateContext extends ColorTouchChannel {
-    public Collection<URI> getDiscoveredURIs();
-    public void setState(State state);
-    public boolean hasThermostats();
-    public boolean hasThermostatWithHost(String host);
-    public void addThermostat(URI baseURI, InfoResponse info);
-    public void refreshAllThermostats(long now);
-    public void doSetDeviceVariable(DeviceContext ctx, String name, Object value);
-    public ColorTouchThermostat getThermostatDevice(DeviceContext ctx);
+    Collection<URI> getDiscoveredURIs();
+    void setState(State state);
+    boolean hasThermostats();
+    boolean hasThermostatWithHost(String host);
+    void addThermostat(URI baseURI, InfoResponse info);
+    void refreshAllThermostats(long now);
+    void doSetDeviceVariable(DeviceContext ctx, String name, Object value);
+    ColorTouchThermostat getThermostatDevice(DeviceContext ctx);
 }

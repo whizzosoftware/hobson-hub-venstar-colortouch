@@ -75,7 +75,7 @@ public class DiscoveryState implements State {
 
         if (response != null) {
             try {
-                if (response.getApiVersion() >= 3 && response.getApiVersion() <= 4) {
+                if (response.getApiVersion() >= 3 && response.getApiVersion() <= 5) {
                     logger.trace("Sending info request to thermostat at {}", request.getURI());
                     InfoRequest ir = new InfoRequest(request.getURI());
                     context.sendInfoRequest(ir);

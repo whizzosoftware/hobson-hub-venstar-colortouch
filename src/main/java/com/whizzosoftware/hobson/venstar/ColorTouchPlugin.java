@@ -1,10 +1,12 @@
-/*******************************************************************************
+/*
+ *******************************************************************************
  * Copyright (c) 2014 Whizzo Software, LLC.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- *******************************************************************************/
+ *******************************************************************************
+*/
 package com.whizzosoftware.hobson.venstar;
 
 import com.whizzosoftware.hobson.api.HobsonNotFoundException;
@@ -17,6 +19,8 @@ import com.whizzosoftware.hobson.api.event.EventTopics;
 import com.whizzosoftware.hobson.api.event.HobsonEvent;
 import com.whizzosoftware.hobson.api.plugin.PluginStatus;
 import com.whizzosoftware.hobson.api.plugin.http.AbstractHttpClientPlugin;
+import com.whizzosoftware.hobson.api.plugin.http.HttpRequest;
+import com.whizzosoftware.hobson.api.plugin.http.HttpResponse;
 import com.whizzosoftware.hobson.api.property.PropertyConstraintType;
 import com.whizzosoftware.hobson.api.property.PropertyContainer;
 import com.whizzosoftware.hobson.api.property.TypedProperty;
@@ -31,6 +35,7 @@ import org.json.JSONTokener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -44,7 +49,7 @@ import java.util.*;
 public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateContext, ColorTouchChannel {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public static final String PROP_THERMOSTAT_HOST = "thermostat.host";
+    static final String PROP_THERMOSTAT_HOST = "thermostat.host";
     private static final long DEFAULT_REFRESH_INTERVAL_IN_SECONDS = 5;
 
     private State state;
@@ -83,7 +88,7 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
             new TypedProperty.Builder(
                 PROP_THERMOSTAT_HOST,
                 "Thermostat Host",
-                "The hostname or IP address of a ColorTouch thermostat. This should be detected automatically but you can enter it manually here if necessary.",
+                "The hostname or IP address of a ColorTouch thermostat. This should be detected automatically but you can enter it manually here if necessary. You must have the API enabled on the thermostat.",
                 TypedProperty.Type.STRING).
                     constraint(PropertyConstraintType.required, true).
                     build()
@@ -133,6 +138,9 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
                 if (ssdp != null && ssdp.getLocation() != null) {
                     try {
                         URI uri = new URI(ssdp.getLocation());
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("Found device at {}: {}", uri.toASCIIString(), ssdp.toString());
+                        }
                         if (ssdp.getNT() != null && ssdp.getNT().equals("colortouch:ecp") && !discoveredURIs.contains(uri)) {
                             logger.info("Found ColorTouch thermostat at {}", ssdp.getLocation());
                             discoveredURIs.add(uri);
@@ -232,18 +240,18 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
 
     @Override
     public void sendRootRequest(RootRequest request) {
-        sendHttpGetRequest(request.getURI(), null, request);
+        sendHttpRequest(request.getURI(), HttpRequest.Method.GET, request);
     }
 
     @Override
     public void sendInfoRequest(InfoRequest request) {
-        sendHttpGetRequest(request.getURI(), null, request);
+        sendHttpRequest(request.getURI(), HttpRequest.Method.GET, null, request);
     }
 
     @Override
     public void sendControlRequest(ControlRequest request) {
         try {
-            sendHttpPostRequest(request.getURI(), null, request.getRequestBody().getBytes(), request);
+            sendHttpRequest(request.getURI(), HttpRequest.Method.POST, null, null, request.getRequestBody().getBytes(), request);
         } catch (UnsupportedEncodingException e) {
             throw new HobsonRuntimeException("Error sending control request", e);
         }
@@ -254,22 +262,27 @@ public class ColorTouchPlugin extends AbstractHttpClientPlugin implements StateC
     // ***
 
     @Override
-    protected void onHttpResponse(int statusCode, List<Map.Entry<String, String>> headers, String response, Object context) {
-        logger.trace("Got HTTP response {} with context: {}", statusCode, context.getClass().getSimpleName());
+    public void onHttpResponse(HttpResponse response, Object context) {
+        logger.trace("Got HTTP response {} with context: {}", response.getStatusCode(), context.getClass().getSimpleName());
 
-        if (context instanceof RootRequest) {
-            state.onRootResponse(this, (RootRequest) context, new RootResponse(new JSONObject(new JSONTokener(response))), null);
-        } else if (context instanceof InfoRequest) {
-            state.onInfoResponse(this, (InfoRequest)context, new InfoResponse(new JSONObject(new JSONTokener(response))), null);
-        } else if (context instanceof ControlRequest) {
-            state.onControlResponse(this, (ControlRequest) context, new ControlResponse(new JSONObject(new JSONTokener(response))), null);
-        } else {
-            logger.error("Unknown HTTP response: " + context);
+        try {
+            if (context instanceof RootRequest) {
+                state.onRootResponse(this, (RootRequest) context, new RootResponse(new JSONObject(new JSONTokener(response.getBodyAsStream()))), null);
+            } else if (context instanceof InfoRequest) {
+                state.onInfoResponse(this, (InfoRequest)context, new InfoResponse(new JSONObject(new JSONTokener(response.getBodyAsStream()))), null);
+            } else if (context instanceof ControlRequest) {
+                state.onControlResponse(this, (ControlRequest) context, new ControlResponse(new JSONObject(new JSONTokener(response.getBodyAsStream()))), null);
+            } else {
+                logger.error("Unknown HTTP response: " + context);
+            }
+        } catch (IOException e) {
+            logger.error("Error reading HTTP response", e);
         }
     }
 
     @Override
-    protected void onHttpRequestFailure(Throwable cause, Object context) {
+    public void onHttpRequestFailure(Throwable cause, Object context) {
+        logger.debug("HTTP request failure", cause);
         if (context instanceof RootRequest) {
             state.onRootResponse(this, (RootRequest) context, null, cause);
         } else if (context instanceof InfoRequest) {
